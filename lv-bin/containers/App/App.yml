@@ -1,0 +1,53 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+GlobalProcessorName: App
+Configuration: !java.util.LinkedHashMap
+  ModuleName: Test.sbapp
+  ModuleFolder: "C:/workspace/PSA_7.7/PSA"
+  Builder: com.streambase.liveview.engine.ModuleGroup.ModuleGroupBuilder
+  Template: ModuleGroup.template
+  PublicStreams: 
+    - !java.util.LinkedHashMap
+      Stream: LDM_Latency
+      Type: output
+      Schema: !java.util.LinkedHashMap
+        Name: ~
+        Fields: 
+          - !java.util.LinkedHashMap
+            field: latency_JMS long
+          - !java.util.LinkedHashMap
+            field: latency_ECS_JMS long
+          - !java.util.LinkedHashMap
+            field: record_time timestamp
+      IOMappings: 
+        - !java.util.LinkedHashMap
+          Mapping: Latency.DataIn
+    - !java.util.LinkedHashMap
+      Stream: OutputStreamCopy
+      Type: output
+      Schema: !java.util.LinkedHashMap
+        Name: ~
+        Fields: 
+          - !java.util.LinkedHashMap
+            field: veh string
+          - !java.util.LinkedHashMap
+            field: Lat double
+          - !java.util.LinkedHashMap
+            field: Long double
+          - !java.util.LinkedHashMap
+            field: id long
+          - !java.util.LinkedHashMap
+            field: Lat1 double
+          - !java.util.LinkedHashMap
+            field: Long1 double
+          - !java.util.LinkedHashMap
+            field: Lat2 double
+          - !java.util.LinkedHashMap
+            field: Long2 double
+          - !java.util.LinkedHashMap
+            field: Status string
+          - !java.util.LinkedHashMap
+            field: ContainerNumber string
+      IOMappings: 
+        - !java.util.LinkedHashMap
+          Mapping: dtable.DataIn

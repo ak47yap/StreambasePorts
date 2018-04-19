@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
+  <data-table id="Latency">
+    <fields>
+      <field name="latency_JMS" type="long"/>
+      <field name="latency_ECS_JMS" type="long"/>
+      <field name="record_time" type="timestamp"/>
+    </fields>
+    <primary-key>
+      <field ref="record_time"/>
+    </primary-key>
+    <data-sources>
+      <data-source>
+        <application application-ref="App" output-stream="LDM_Latency"/>
+      </data-source>
+    </data-sources>
+  </data-table>
+</liveview-configuration>

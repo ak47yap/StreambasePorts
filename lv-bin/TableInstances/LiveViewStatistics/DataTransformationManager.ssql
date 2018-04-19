@@ -1,0 +1,50 @@
+IMPORT * FROM "CQInterfaces.sbint" ;
+IMPORT * FROM "QueryServerCommonSchema.sbapp" ;
+
+CREATE INPUT STREAM DataIn DataSchema;
+CREATE OUTPUT STREAM DataOut EnrichedDataSchema;
+CREATE INPUT STREAM QueryIn QuerySchema;
+
+CREATE INPUT STREAM DeleteSignalIn DeleteSignalSchema;
+CREATE INPUT STREAM QueryTheLastGoodRecord TheLastGoodRecordQuerySchema;
+CREATE INPUT STREAM RecoverSignalIn RecoverSignalSchema;
+CREATE INPUT STREAM RecoveryDoneSignalIn RecoverDoneSignalSchema;
+CREATE OUTPUT STREAM LastGoodRecordOut TheLastGoodRecordResponseSchema;
+CREATE OUTPUT STREAM DataRecoverSignalOut RecoverSignalSchema;
+CREATE OUTPUT STREAM RecoveryDoneSignalOut RecoverSignalSchema;
+
+
+
+CREATE STREAM BeforeOut ;
+APPLY MODULE "LiveViewStatisticsMonitor.sbapp" AS Transformer_0 
+ FROM  DataIn = DataIn INTO
+
+ DataOut = BeforeOut ;
+
+
+DECLARE sequenceid long DEFAULT 0L;
+-- support recovery initing sequence number
+CREATE STREAM gen__seqIdInit (
+    CQSSequenceNumber long
+);
+SELECT LastCQSSequenceID as CQSSequenceNumber FROM RecoveryDoneSignalIn INTO gen__seqIdInit;
+UPDATE sequenceid FROM (SELECT * FROM gen__seqIdInit);
+
+ -- seqIdSetter
+CREATE STREAM gen__seqIdSetter (
+    CQSSequenceNumber long
+);
+CREATE STREAM out__Sequence;
+SELECT sequenceid + long(1) AS CQSSequenceNumber FROM BeforeOut INTO gen__seqIdSetter;
+SELECT *, sequenceid AS CQSSequenceNumber FROM BeforeOut INTO out__Sequence;
+UPDATE sequenceid FROM (SELECT * FROM gen__seqIdSetter);
+
+
+SELECT out__Sequence.* as *, int() as CQSErrorCode, long() as CQSInternalID FROM out__Sequence INTO DataOut ;CREATE STREAM out__Split_1 ;
+CREATE STREAM out__Split_2 ;
+SELECT * FROM RecoverSignalIn INTO out__Split_1 ;
+SELECT * FROM RecoverSignalIn INTO out__Split_2 ;
+SELECT out__Split_1.time AS time, bool(true) AS RecoverStillOnGoing, maxlong() AS CQSSequenceNumber, out__Split_1.PeerURI AS PeerURI, if (out__Split_1.Status=='ONGOING') then 'DONE' else out__Split_1.Status AS Status FROM out__Split_1 INTO DataRecoverSignalOut ;
+SELECT out__Split_2.time AS time, bool(false) AS RecoverStillOnGoing, long() AS CQSSequenceNumber, out__Split_2.PeerURI AS PeerURI, if (out__Split_2.Status=='ONGOING') then 'DONE' else out__Split_2.Status AS Status FROM out__Split_2 INTO RecoveryDoneSignalOut ;
+SELECT QueryTheLastGoodRecord.CQSConnectionID AS CQSConnectionID, QueryTheLastGoodRecord.PublisherID AS PublisherID, maxlong() AS PublisherSN, maxlong() AS CQSInternalID, maxlong() AS CQSSequenceNumber, bool(true) AS RecoveredFromFile, QueryTheLastGoodRecord.Tablename AS Tablename, bool(true) AS Done FROM QueryTheLastGoodRecord INTO LastGoodRecordOut ;
+

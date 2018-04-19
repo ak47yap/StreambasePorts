@@ -1,0 +1,67 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+TableName: LVAlerts
+TableType: Data
+PublishType: Realtime
+PrimaryKey: AlertKey AlertRuleID SourceInternalID
+Fields: 
+  - !java.util.LinkedHashMap
+    field: AlertKey string
+  - !java.util.LinkedHashMap
+    field: AlertRuleID long
+  - !java.util.LinkedHashMap
+    field: SourceInternalID long
+  - !java.util.LinkedHashMap
+    field: SourceTable string
+  - !java.util.LinkedHashMap
+    field: AlertRuleName string
+  - !java.util.LinkedHashMap
+    field: Created timestamp
+  - !java.util.LinkedHashMap
+    field: LastModified timestamp
+  - !java.util.LinkedHashMap
+    field: Severity int
+  - !java.util.LinkedHashMap
+    field: Recipient string
+  - !java.util.LinkedHashMap
+    field: Message string
+  - !java.util.LinkedHashMap
+    field: Payload string
+FieldUpdateRules: 
+  - 
+    - !java.util.LinkedHashMap
+      Test: true
+      Assignments: 
+        - !java.util.LinkedHashMap
+          Type: FieldInit
+          Action: InsertInit
+          Name: Created
+          Value: now()
+        - !java.util.LinkedHashMap
+          Type: FieldInit
+          Action: UpdateInit
+          Name: Created
+          Value: old.Created
+        - !java.util.LinkedHashMap
+          Type: FieldInit
+          Action: InsertInit
+          Name: LastModified
+          Value: now()
+        - !java.util.LinkedHashMap
+          Type: FieldInit
+          Action: UpdateInit
+          Name: LastModified
+          Value: now()
+Indices: 
+  - !java.util.LinkedHashMap
+    index: AlertKey AlertRuleID SourceInternalID
+Configuration: !java.util.LinkedHashMap
+  BuildOnServerStart: off
+  BuildSbarOnServerStart: off
+  LoadOnServerStart: on
+  LoadFromSbar: off
+  NumberOfThreads: 1
+  NumberOfConcurrentSnaps: 0
+  MinCacheSizeForEval: 1000
+  MaxCacheSizeForEval: 1000
+  RestoreDataOnStart: off

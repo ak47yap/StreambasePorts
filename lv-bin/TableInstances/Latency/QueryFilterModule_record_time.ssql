@@ -1,0 +1,464 @@
+--
+--  This is a generated file from QueryFilterModule.java
+--
+IMPORT * FROM "CQInterfaces.sbint" ;
+IMPORT * FROM "QueryFilter.sbint" ;
+
+IMPLEMENTS "QueryFilter.sbint";
+
+DECLARE CacheSize int DEFAULT 1000;
+DECLARE TimeWindowsEvalCacheSize int DEFAULT 1000;
+DECLARE _NOW timestamp DEFAULT now();
+DECLARE _TODAY timestamp DEFAULT today();
+
+CREATE INPUT STREAM QueryInsertIn QueryLookupSchema;
+CREATE INPUT STREAM TimeIn TimeSchema;
+CREATE INPUT STREAM DelayEvalDataIn DelayEvalDataSchema;
+CREATE INPUT STREAM DataIn ContUpdateDataInputSchema;
+CREATE INPUT STREAM DataFeedbackIn ContUpdateDataFeedbackSchema;
+
+CREATE OUTPUT STREAM QueryInsertOut QueryLookupSchema;
+CREATE OUTPUT STREAM QueryTimeWindowUpdateOut DataRefeshQuerySchema;
+CREATE OUTPUT STREAM DelayEvalDataOut DelayEvalDataSchema;
+CREATE OUTPUT STREAM FilteredDataOut RawTableContSchemaOut;
+CREATE OUTPUT STREAM FilteredDataForAggOut DataAndQuery;
+CREATE OUTPUT STREAM ChangeFilterOut ContUpdateDataFeedbackSchema;
+
+CREATE TABLE QueryLookup QueryLookupSchema PRIMARY KEY (record_time_Value, CQSConnectionID, CQSQueryID) SECONDARY KEY (CQSConnectionID, CQSQueryID);
+-- For trigger update time-window and reload still data
+
+CREATE OUTPUT STREAM UpdateTime ;
+
+CREATE STREAM ToLookupQuery ;
+SELECT * FROM TimeIn INTO UpdateTime;
+SELECT * FROM TimeIn INTO ToLookupQuery;
+
+CREATE STREAM LookUp ;
+CREATE STREAM Emit ;
+SELECT * FROM ToLookupQuery INTO LookUp;
+SELECT * FROM ToLookupQuery INTO Emit;
+
+CREATE STREAM EmitSignal ;
+SELECT
+    Emit.* AS *,
+    true AS Emit
+FROM   Emit
+INTO   EmitSignal;
+
+CREATE STREAM ToUpdateWindow ;
+SELECT LookUp._ShardTime, LookUp._ShardDay, QueryLookup.*, _NOW AS _NOW, _TODAY AS _TODAY
+FROM LookUp, QueryLookup
+WHERE QueryLookup._IsTimeWindowedQuery == true
+ORDER BY _IsTimeWindowedQuery
+INTO ToUpdateWindow;
+
+CREATE STREAM TimeWindowQueryMsg;
+UPDATE QueryLookup
+    USING ToUpdateWindow
+    SET _WindowStartTime = eval(QueryLookup._WindowStartTimeExpr, ToUpdateWindow, timestamp(), TimeWindowsEvalCacheSize) AS QueryLookup._WindowStartTime, 
+        _WindowEndTime = eval(QueryLookup._WindowEndTimeExpr, ToUpdateWindow, timestamp(), TimeWindowsEvalCacheSize) AS QueryLookup._WindowEndTime
+    WHERE QueryLookup.CQSQueryID==ToUpdateWindow.CQSQueryID&&QueryLookup.CQSConnectionID==ToUpdateWindow.CQSConnectionID&&QueryLookup.record_time_Value==ToUpdateWindow.record_time_Value
+    RETURNING QueryLookup.CQSConnectionID AS CQSConnectionID,
+              QueryLookup.CQSConnectionID AS CQSQueryID,
+              QueryLookup._Predicates.Original AS _PredicateExpr,
+              QueryLookup._QueryArrivalTime AS _QueryArrivalTime,
+              QueryLookup._WindowStartTime AS _CurrentWindowStartTime,
+              QueryLookup._WindowEndTime AS _CurrentWindowEndTime,
+              QueryLookup._WindowStartTimeExpr AS _WindowStartTimeExpr,
+              QueryLookup._WindowEndTimeExpr AS _WindowEndTimeExpr,
+              QueryLookup._TimestampField AS _TimestampField,
+              ToUpdateWindow._NOW AS _NOW,
+              ToUpdateWindow._TODAY AS _TODAY
+    INTO TimeWindowQueryMsg;
+
+CREATE STREAM MessageUnion;
+SELECT * FROM TimeWindowQueryMsg
+UNION SELECT * FROM EmitSignal
+INTO MessageUnion;
+
+CREATE STREAM QueryListOut;
+CREATE WINDOW Dimension1(PREDICATE CLOSE ON Emit);
+SELECT 
+    firstval(MessageUnion._NOW) AS _NOW,
+    firstval(MessageUnion._TODAY) AS _TODAY,
+    aggregatelist(tuple(
+      MessageUnion.CQSConnectionID AS CQSConnectionID,
+      MessageUnion.CQSConnectionID AS CQSQueryID,
+      MessageUnion._PredicateExpr AS _PredicateExpr,
+      MessageUnion._QueryArrivalTime AS _QueryArrivalTime,
+      MessageUnion._CurrentWindowStartTime AS _CurrentWindowStartTime,
+      MessageUnion._CurrentWindowEndTime AS _CurrentWindowEndTime,
+      MessageUnion._WindowStartTimeExpr AS _WindowStartTimeExpr,
+      MessageUnion._WindowEndTimeExpr AS _WindowEndTimeExpr,
+      MessageUnion._TimestampField AS _TimestampField
+    )) AS TimeWindowQueries
+FROM MessageUnion[Dimension1]
+INTO QueryListOut;
+
+SELECT
+    _NOW AS _NOW,
+    _TODAY AS _TODAY,
+    removeelement(TimeWindowQueries, length(TimeWindowQueries)-1) AS TimeWindowQueries
+FROM   QueryListOut
+WHERE length(TimeWindowQueries)>1
+INTO QueryTimeWindowUpdateOut;
+
+-- Update Local time
+
+UPDATE _NOW FROM (SELECT _ShardTime AS _NOW FROM UpdateTime);
+UPDATE _TODAY FROM (SELECT _ShardDay AS _TODAY FROM UpdateTime);
+
+-- For insert query and recalculate cache size
+
+CREATE STREAM SplitIn;
+INSERT INTO QueryLookup 
+    SELECT *
+  FROM QueryInsertIn 
+    WHERE (notnull(QueryInsertIn._Command) && (3 == QueryInsertIn._Command || 4 == QueryInsertIn._Command)) && record_time==true   
+  RETURNING QueryInsertIn.* INTO SplitIn;
+  
+CREATE STREAM SplitOut ;
+SELECT * FROM SplitIn INTO SplitOut;
+SELECT * FROM SplitIn INTO QueryInsertOut;
+
+CREATE STREAM CountOut ;
+SELECT count() AS Count
+ FROM SplitOut OUTER JOIN QueryLookup
+WHERE true
+INTO CountOut;
+
+CREATE STREAM FilterOut ;
+SELECT * FROM CountOut
+WHERE Count>=0.5*CacheSize INTO FilterOut;
+
+-- UPDATE CacheSize FROM (SELECT 2*CacheSize AS CacheSize FROM FilterOut);
+
+UPDATE CacheSize FROM (
+ SELECT if(2*CacheSize>1000) then 1000 else 2*CacheSize AS CacheSize FROM FilterOut
+);
+
+-- For unregistering query
+
+DELETE FROM QueryLookup
+  USING QueryInsertIn
+    WHERE (notnull(QueryInsertIn._Command) && (0 == QueryInsertIn._Command || 2 == QueryInsertIn._Command)) && 
+          (notnull(QueryInsertIn.CQSConnectionID) && QueryLookup.CQSConnectionID == QueryInsertIn.CQSConnectionID) && 
+           QueryLookup.CQSQueryID == QueryInsertIn.CQSQueryID;
+
+-- For delayed data evaluation 
+
+SELECT DelayEvalDataIn.* AS *
+FROM DelayEvalDataIn, QueryLookup 
+WHERE notnull(CQSInternalID)&&DelayEvalDataIn.record_time==QueryLookup.record_time_Value&&DelayEvalDataIn.CQSQueryID==QueryLookup.CQSQueryID&&(_IndexName=='Tablescan'||eval(QueryLookup._Predicates.Original, DelayEvalDataIn, bool(), CacheSize))
+INTO DelayEvalDataOut;
+
+-- Change Filter
+
+SELECT DataIn.* AS *, 'record_time' AS MatchedFilter 
+FROM DataIn 
+WHERE notnull(CQSInternalID)&&notnull(Old)&&notnull(Old.CQSInternalID) 
+&&(notnull(Old.record_time)&&Old.record_time!=DataIn.record_time) 
+INTO ChangeFilterOut;
+
+-- Deleted data
+
+CREATE STREAM DeleteCandidate AS
+SELECT QueryLookup.* As query_*,
+       DataIn.Old.*, 
+       tuple((DataIn.Old).* AS *, 
+       		 (if(QueryLookup._QueryArrivalTime < Old._LastEvalTime) then Old._LastEvalTime else QueryLookup._QueryArrivalTime) AS _NOW,
+       		 (if(QueryLookup._QueryArrivalTime < Old._LastEvalTime) then set_second(set_minute(set_hour(Old._LastEvalTime, 0), 0), 0.0) else set_second(set_minute(set_hour(QueryLookup._QueryArrivalTime, 0), 0), 0.0)) AS _TODAY
+       		 ) AS Old,
+       EXCEPT CQSReferredCount
+FROM DataIn, QueryLookup
+WHERE 
+isnull(CQSInternalID)&&notnull(Old)&&notnull(Old.CQSInternalID) 
+&&Old.record_time==QueryLookup.record_time_Value&&(!_RefreshTimeWindowedQuery||(_RefreshTimeWindowedQuery&&_IsTimeWindowedQuery));
+
+CREATE STREAM AllDeletedData AS
+SELECT DeleteCandidate.*,
+       EXCEPT Old._NOW,
+       EXCEPT Old._TODAY,
+       SCOPE_TRANSITION_LEAVE AS CQSScopeTransition
+FROM DeleteCandidate
+WHERE (eval(query__Predicates.DeleteFilter, Old, bool(), TimeWindowsEvalCacheSize));
+
+CREATE STREAM DeletedData;
+CREATE STREAM DeletedDataForAgg;
+SELECT * AS *
+FROM AllDeletedData
+WHERE !query__IsAggQuery
+INTO DeletedData
+WHERE true
+INTO DeletedDataForAgg;
+
+-- Filtering data for feedback loop
+
+CREATE STREAM DataFeedbackFilter AS
+SELECT QueryLookup.* as query_*, Old,
+       (
+         if('record_time'==MatchedFilter&&
+--            (eval(QueryLookup._PredicateExpr, DataFeedbackIn.Old, bool(), CacheSize)&&
+--            (!QueryLookup._IsTimeWindowedQuery||(eval(QueryLookup._TimestampField, Old, timestamp(), TimeWindowsEvalCacheSize) between eval(QueryLookup._WindowStartTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize) and eval(QueryLookup._WindowEndTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize)))&&
+--            !(eval(QueryLookup._PredicateExpr, DataFeedbackIn, bool(), CacheSize))&&
+--            (!QueryLookup._IsTimeWindowedQuery||eval(QueryLookup._TimestampField, DataFeedbackIn, timestamp(), TimeWindowsEvalCacheSize) between QueryLookup._WindowStartTime and QueryLookup._WindowEndTime))) then
+            eval(QueryLookup._Predicates.FeedbackFilterOld, Old, bool(), CacheSize) &&
+            eval(QueryLookup._Predicates.FeedbackFilterNew, DataFeedbackIn, bool(), CacheSize)) then
+            SCOPE_TRANSITION_LEAVE
+         else
+            SCOPE_TRANSITION_REMAINOUT       
+       ) AS CQSScopeTransition
+FROM DataFeedbackIn, QueryLookup 
+WHERE notnull(CQSInternalID)&&Old.record_time==QueryLookup.record_time_Value&&(!_RefreshTimeWindowedQuery||(_RefreshTimeWindowedQuery&&_IsTimeWindowedQuery));
+
+-- Filtering data for new update
+
+CREATE STREAM DataAndFilter AS
+SELECT QueryLookup.* as query_*, 
+       DataIn.*,
+       EXCEPT Old,
+       tuple((DataIn.Old).* AS *,
+             QueryLookup._WindowStartTimeExpr AS query__WindowStartTimeExpr,
+             QueryLookup._WindowEndTimeExpr AS query__WindowEndTimeExpr, 
+             QueryLookup._IsTimeWindowedQuery AS query__IsTimeWindowedQuery,
+             (if(QueryLookup._QueryArrivalTime < Old._LastEvalTime) then Old._LastEvalTime else QueryLookup._QueryArrivalTime) AS _NOW,
+             (if(QueryLookup._QueryArrivalTime < Old._LastEvalTime) then set_second(set_minute(set_hour(Old._LastEvalTime, 0), 0), 0.0) else set_second(set_minute(set_hour(QueryLookup._QueryArrivalTime, 0), 0), 0.0))AS _TODAY) AS Old
+FROM DataIn, QueryLookup 
+WHERE notnull(CQSInternalID)&&DataIn.record_time==QueryLookup.record_time_Value&&(!_RefreshTimeWindowedQuery||(_RefreshTimeWindowedQuery&&_IsTimeWindowedQuery));
+
+CREATE STREAM DataInFilter AS
+SELECT DataAndFilter.* as *, 
+       (
+--           if ((""==query__PredicateExpr||eval(query__PredicateExpr, DataAndFilter, bool(), CacheSize))&&
+--               (!query__IsTimeWindowedQuery||(eval(query__TimestampField, DataAndFilter, timestamp(), TimeWindowsEvalCacheSize) between query__WindowStartTime and query__WindowEndTime))) then
+           if (eval(query__Predicates.UpdateFilterNew, DataAndFilter, bool(), CacheSize)) then
+              if isnull(Old.CQSInternalID) then
+                 SCOPE_TRANSITION_ENTER
+--              else if ((""==query__PredicateExpr||eval(query__PredicateExpr, Old, bool(), CacheSize))&&
+--                       (!query__IsTimeWindowedQuery||(eval(query__TimestampField, Old, timestamp(), TimeWindowsEvalCacheSize) between eval(query__WindowStartTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize) and eval(query__WindowEndTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize)))) then
+              else if (eval(query__Predicates.UpdateFilterOld, Old, bool(), CacheSize)) then
+                 SCOPE_TRANSITION_REMAININ
+              else
+                 SCOPE_TRANSITION_ENTER
+           else  
+              if isnull(DataAndFilter.Old.CQSInternalID) then
+                 SCOPE_TRANSITION_REMAINOUT
+--              else if ((""==query__PredicateExpr||eval(query__PredicateExpr, Old, bool(), CacheSize))&&
+--                       (!query__IsTimeWindowedQuery||(eval(query__TimestampField, Old, timestamp(), TimeWindowsEvalCacheSize) between eval(query__WindowStartTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize) and eval(query__WindowEndTimeExpr, Old, timestamp(), TimeWindowsEvalCacheSize)))) then
+              else if (eval(query__Predicates.UpdateFilterOld, Old, bool(), CacheSize)) then
+                 SCOPE_TRANSITION_LEAVE
+              else
+                 SCOPE_TRANSITION_REMAINOUT
+       ) AS CQSScopeTransition
+FROM DataAndFilter;
+
+CREATE STREAM TempStream02 AS
+SELECT * FROM DataFeedbackFilter
+UNION SELECT * FROM DataInFilter;
+
+-- Check if it's data query or agg query
+
+CREATE STREAM NonAggData;
+CREATE STREAM AggData;
+
+SELECT * AS *, EXCEPT CQSReferredCount
+FROM TempStream02
+WHERE !query__IsAggQuery
+INTO NonAggData
+WHERE (notnull(query_CQSQueryID)) && (SCOPE_TRANSITION_REMAINOUT!=CQSScopeTransition)
+INTO AggData;
+
+-- do the final output selection of just certain fields
+
+CREATE STREAM RawData AS
+SELECT * FROM DeletedData UNION SELECT * FROM NonAggData;
+
+SELECT *,
+       EXCEPT _LastEvalTime,
+       EXCEPT query__Predicates,
+       EXCEPT query__QueryArrivalTime,
+       EXCEPT query__IsTimeWindowedQuery,
+       EXCEPT query__TimestampField,
+       EXCEPT query__WindowEndTime,
+       EXCEPT query__WindowEndTimeExpr,
+       EXCEPT query__WindowStartTime,
+       EXCEPT query__WindowStartTimeExpr,
+
+-- begin Now that internal field names are decorated with _, maybe we dont need to push everything into sub tuple query_?
+       query__DelayedMilliSeconds as _DelayedMilliSeconds,
+       query__MaxRecordsLimit as _MaxRecordsLimit,
+       query__SnapshotType as _SnapshotType,
+       query__OrderBy as _OrderBy,
+       query__Direction as _Direction,
+       query__DeltaFields as _DeltaFields,
+
+       EXCEPT query__DelayedMilliSeconds,
+       EXCEPT query__MaxRecordsLimit,
+       EXCEPT query__SnapshotType,
+       EXCEPT query__OrderBy,
+       EXCEPT query__Direction,
+       EXCEPT query__DeltaFields,
+
+       query__AggExpressions as _AggExpressions,
+       EXCEPT query__AggExpressions,
+
+       query__PredicateExpr as _PredicateExpr,
+       EXCEPT query__PredicateExpr,
+
+       query_CQSQueryID as CQSQueryID,
+       EXCEPT query_CQSQueryID,
+       query_CQSConnectionID as CQSConnectionID,
+       EXCEPT query_CQSConnectionID,
+       EXCEPT query_CQSMatchNumber,
+       EXCEPT query_CQSServerID,
+       EXCEPT query_CQSMessageType,
+
+
+       EXCEPT query_CQSScopeTransition,
+       EXCEPT query_CQSElapsedTime,
+       query__Command as _Command,
+       EXCEPT query__Command,
+       query__IndexName as _IndexName,
+       EXCEPT query__IndexName,
+
+       query__IsAggQuery as _IsAggQuery,
+       EXCEPT query__IsAggQuery,
+       query__AggExpr as _AggExpr,
+       EXCEPT query__AggExpr,
+
+       query__GroupBy as _GroupBy,
+       EXCEPT query__GroupBy,
+-- end
+
+       REPLACE long() As CQSInternalID,
+       REPLACE long() As CQSSequenceNumber
+FROM DeletedDataForAgg 
+UNION SELECT *,
+
+--       query__Predicates.Original AS query__PredicateExpr,
+       EXCEPT Old._NOW, 
+       EXCEPT Old._TODAY, 
+       EXCEPT Old.query__WindowStartTimeExpr, 
+       EXCEPT Old.query__WindowEndTimeExpr, 
+       EXCEPT Old.query__IsTimeWindowedQuery,
+
+-- begin Now that internal field names are decorated with _, maybe we dont need to push everything into sub tuple query_?
+--       EXCEPT _LastEvalTime,
+
+       query__DelayedMilliSeconds as _DelayedMilliSeconds,
+       query__MaxRecordsLimit as _MaxRecordsLimit,
+       query__SnapshotType as _SnapshotType,
+       query__OrderBy as _OrderBy,
+       query__Direction as _Direction,
+       query__DeltaFields AS _DeltaFields,
+
+       EXCEPT query__DelayedMilliSeconds,
+       EXCEPT query__MaxRecordsLimit,
+       EXCEPT query__SnapshotType,
+       EXCEPT query__OrderBy,
+       EXCEPT query__Direction,
+       EXCEPT query__DeltaFields,
+
+       query__AggExpressions as _AggExpressions,
+       EXCEPT query__AggExpressions,
+
+       query__PredicateExpr as _PredicateExpr,
+       EXCEPT query__PredicateExpr,
+
+       query_CQSQueryID as CQSQueryID,
+       EXCEPT query_CQSQueryID,
+
+       query_CQSConnectionID as CQSConnectionID,
+       EXCEPT query_CQSConnectionID,
+
+       EXCEPT query_CQSMatchNumber,
+       EXCEPT query_CQSServerID,
+       EXCEPT query_CQSMessageType,
+
+       EXCEPT query_CQSScopeTransition,
+       EXCEPT query_CQSElapsedTime,
+
+       query__Command as _Command,
+       EXCEPT query__Command,
+
+       query__IndexName as _IndexName,
+       EXCEPT query__IndexName,
+        
+       query__IsAggQuery as _IsAggQuery,
+       EXCEPT query__IsAggQuery,
+
+       query__AggExpr as _AggExpr,
+       EXCEPT query__AggExpr,
+        
+       query__GroupBy as _GroupBy,
+       EXCEPT query__GroupBy,
+-- end
+       EXCEPT query__Predicates,
+       EXCEPT query__QueryArrivalTime,
+       EXCEPT query__IsTimeWindowedQuery,
+       EXCEPT query__TimestampField,
+       EXCEPT query__WindowEndTime,
+       EXCEPT query__WindowEndTimeExpr,
+       EXCEPT query__WindowStartTime,
+       EXCEPT query__WindowStartTimeExpr
+FROM AggData INTO FilteredDataForAggOut;
+
+-- Send to regular Delta field processing, or send all fields with changed bit mask
+CREATE OUTPUT STREAM RawDataDelta;
+CREATE OUTPUT STREAM RawDataNoDelta;
+SELECT * FROM RawData WHERE (notnull(query_CQSQueryID)) && (SCOPE_TRANSITION_REMAINOUT!=CQSScopeTransition) && (isnull(query__DeltaFields) || query__DeltaFields==true) INTO RawDataDelta;
+SELECT * FROM RawData WHERE (notnull(query_CQSQueryID)) && (SCOPE_TRANSITION_REMAINOUT!=CQSScopeTransition) && !isnull(query__DeltaFields) && query__DeltaFields==false INTO RawDataNoDelta;
+
+-- This is the non-delta field path
+CREATE OUTPUT STREAM FilteredNoDeltaDataOut ;
+ APPLY JAVA "com.streambase.liveview.engine.operator.DeltaField" AS DeltaField
+( schema0 = "RawTableContSchemaOut" )
+ FROM RawDataNoDelta
+ INTO FilteredNoDeltaDataOut;
+
+-- This is the delta field path
+CREATE OUTPUT STREAM FilteredDeltaDataOut;
+SELECT
+    string(null) AS CQSServerID,
+    query_CQSQueryID AS CQSQueryID,
+    query_CQSConnectionID AS CQSConnectionID,
+    query__PredicateExpr AS _PredicateExpr,
+    "QueryResult" AS CQSMessageType,
+    int(null) AS CQSMatchNumber,
+    double(null) AS CQSElapsedTime,
+    CQSShardSequenceNumber,
+    (if(SCOPE_TRANSITION_LEAVE!=CQSScopeTransition) then CQSInternalID else Old.CQSInternalID) AS CQSInternalID,             -- always output the CQSInternalID value
+    CQSScopeTransition,                                                                                                      -- always output the CQSScopeTransition value
+    (if(SCOPE_TRANSITION_LEAVE!=CQSScopeTransition) then CQSSequenceNumber else Old.CQSSequenceNumber) AS CQSSequenceNumber, -- always output the sequence number
+    (if(SCOPE_TRANSITION_LEAVE!=CQSScopeTransition) then CQSErrorCode else Old.CQSErrorCode) AS CQSErrorCode,                -- always output the error code
+    _LastEvalTime,
+    _DueTime,
+    _ArrivalTime,
+    _Time,
+    _RefreshTimeWindowedQuery,
+    query__DelayedMilliSeconds AS _DelayedMilliSeconds,
+    query__MaxRecordsLimit AS _MaxRecordsLimit,
+    query__SnapshotType AS _SnapshotType,
+    query__OrderBy AS _OrderBy,
+    query__Direction AS _Direction,
+    query__DeltaFields as _DeltaFields,
+    blob(null) as _DeltaMask,
+
+    Old.* as _Old.*,
+    EXCEPT _Old._NOW, 
+    EXCEPT _Old._TODAY,
+    EXCEPT _Old.query__WindowStartTimeExpr, 
+    EXCEPT _Old.query__WindowEndTimeExpr, 
+    EXCEPT _Old.query__IsTimeWindowedQuery,
+	record_time,
+
+    --
+    -- the following tests will output a null if new.field == old.field otherwise the value of new.field
+    --
+	if SCOPE_TRANSITION_ENTER!=CQSScopeTransition&&coalesce(latency_JMS == Old.latency_JMS, false) then null else latency_JMS AS latency_JMS,
+	if SCOPE_TRANSITION_ENTER!=CQSScopeTransition&&coalesce(latency_ECS_JMS == Old.latency_ECS_JMS, false) then null else latency_ECS_JMS AS latency_ECS_JMS
+
+FROM RawDataDelta
+INTO FilteredDeltaDataOut;
+
+SELECT * FROM FilteredNoDeltaDataOut UNION SELECT * FROM FilteredDeltaDataOut into FilteredDataOut;

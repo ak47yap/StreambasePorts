@@ -1,0 +1,21 @@
+
+
+CREATE  STREAM LDM_Latency_Temp;
+CREATE OUTPUT STREAM LDM_Latency WITH PARAMETERS (connection = "'Latency.DataIn'");
+
+CREATE  STREAM OutputStreamCopy_Temp;
+CREATE OUTPUT STREAM OutputStreamCopy WITH PARAMETERS (connection = "'dtable.DataIn'");
+
+
+
+
+
+
+
+APPLY MODULE "Test.sbapp" AS WorkingProcessor 
+
+INTO LDM_Latency = LDM_Latency_Temp,OutputStreamCopy = OutputStreamCopy_Temp;
+
+SELECT string() AS PublisherID, long() AS PublisherSN, string() AS CQSDataUpdatePredicate, bool() AS CQSDelete, int() AS CQSReferredCount, LDM_Latency_Temp.latency_JMS AS latency_JMS, LDM_Latency_Temp.latency_ECS_JMS AS latency_ECS_JMS, LDM_Latency_Temp.record_time AS record_time FROM LDM_Latency_Temp INTO LDM_Latency;
+SELECT string() AS PublisherID, long() AS PublisherSN, string() AS CQSDataUpdatePredicate, bool() AS CQSDelete, int() AS CQSReferredCount, OutputStreamCopy_Temp.ContainerNumber AS ContainerNumber, OutputStreamCopy_Temp.veh AS veh, OutputStreamCopy_Temp.Lat AS Lat, OutputStreamCopy_Temp.Long AS Long, OutputStreamCopy_Temp.id AS id, OutputStreamCopy_Temp.Lat1 AS Lat1, OutputStreamCopy_Temp.Long1 AS Long1, OutputStreamCopy_Temp.Lat2 AS Lat2, OutputStreamCopy_Temp.Long2 AS Long2, OutputStreamCopy_Temp.Status AS Status FROM OutputStreamCopy_Temp INTO OutputStreamCopy;
+

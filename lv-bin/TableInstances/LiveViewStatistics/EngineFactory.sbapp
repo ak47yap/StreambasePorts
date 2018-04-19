@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.2.6">
+    <add generator="gui">
+        <import from="CQInterfaces.sbint" postfix="" prefix=""/>
+        <import from="QueryServerCommonSchema.sbapp" postfix="" prefix=""/>
+        <parameter-definitions>
+            <parameter default="4" name="SHARDS"/>
+            <parameter default="0" name="NumberOfConcurrentSnaps"/>
+            <parameter default="'dev'" name="Tablename"/>
+        </parameter-definitions>
+        <schema name="schema:OneSecondTimer">
+            <field description="" name="SecondCount" type="int"/>
+        </schema>
+        <stream name="DataIn" schema="InternalEnrichedDataSchema">
+            <param name="gui:x" value="425.0"/>
+            <param name="gui:y" value="78.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="OneSecondTimer" schema="schema:OneSecondTimer" scope="public">
+            <param name="gui:x" value="429.0"/>
+            <param name="gui:y" value="181.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="ServerStatus" schema="ServerStatusSchema" scope="public">
+            <param name="gui:x" value="422.0"/>
+            <param name="gui:y" value="483.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="TableInitializationIn" schema="TableInitializationSchema">
+            <param name="gui:x" value="427.0"/>
+            <param name="gui:y" value="389.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <box name="SingleOrMultipleUpdate" type="filter">
+            <input port="1" stream="DataIn"/>
+            <output port="1" stream="out:SingleOrMultipleUpdate_1"/>
+            <output port="2" stream="out:SingleOrMultipleUpdate_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="isnull(CQSDataUpdatePredicate)||''==CQSDataUpdatePredicate"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="584.0"/>
+            <param name="gui:y" value="154.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="148,740"/>
+        </box>
+<data name="QueuedQueryTable" type="querytable">
+    <param name="gui:x" value="645.0"/>
+    <param name="gui:y" value="536.0"/>
+    <param name="gui:width" value="190.0"/>
+    <param name="gui:height" value="63.0"/>
+    <primary-index type="btree">
+        <field name="CQSConnectionID"/>
+        <field name="CQSQueryID"/>
+    </primary-index>
+    <param name="storage-method" value="memory"/>
+    <param name="schema" value="__Query_Server_Common_Schema_sbapp_schema__Queued_Query_Table_Schema_"/>
+    <param name="replicated" value="false"/>
+    <param name="shared-table" value="input"/>
+    <param name="table-schema" value="QueuedQueryTableSchema"/>
+    <param name="truncate" value="false"/>
+    <preload format="csv" mode="empty"/>
+</data>
+
+        <module-reference name="EngineImpl">
+            <parameter-bindings>
+                <binding name="UseContainerConnections" value="true"/>
+                <binding name="Tablename" value="${Tablename}"/>
+                <binding name="SHARDS" value="${SHARDS}"/>
+                <binding name="NumberOfConcurrentSnaps" value="${NumberOfConcurrentSnaps}"/>
+            </parameter-bindings>
+            <param name="file" value="CQEngine_QF.sbapp"/>
+            <input name="DataIn" port="1" stream="out:SingleOrMultipleUpdate_1"/>            <input name="BrocastDataIn" port="2" stream="out:SingleOrMultipleUpdate_2"/>            <input name="OneSecondTimer" port="3" stream="OneSecondTimer"/>            <input name="TableInitializationIn" port="4" stream="TableInitializationIn"/>            <input name="ServerStatus" port="5" stream="ServerStatus"/>
+            <output name="ActualDeleteCount" port="6" stream="ActualDeleteCount"/>
+            <param name="parallel" value="true"/>
+            <multiplicity type="single"/>
+<input-dataref name="QueuedQueryTable" table="QueuedQueryTable"/>
+            <param name="gui:x" value="714.0"/>
+            <param name="gui:y" value="283.0"/>
+            <param name="gui:width" value="71.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="295,295,296;152,1067;510,509;133,88"/>
+        </module-reference>
+        <output-stream name="ActualDeleteCount">
+    <param name="gui:x" value="888"/>
+    <param name="gui:y" value="287"/>
+        </output-stream>
+    </add>
+</modify>

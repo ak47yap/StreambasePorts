@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
+  <data-table id="dtable">
+    <fields>
+      <field name="ContainerNumber" type="string"/>
+      <field name="veh" type="string"/>
+      <field name="Lat" type="double"/>
+      <field name="Long" type="double"/>
+      <field name="id" type="long"/>
+      <field name="Lat1" type="double"/>
+      <field name="Long1" type="double"/>
+      <field name="Lat2" type="double"/>
+      <field name="Long2" type="double"/>
+      <field name="Status" type="string"/>
+    </fields>
+    <primary-key>
+      <field ref="veh"/>
+    </primary-key>
+    <data-sources>
+      <data-source>
+        <application application-ref="App" output-stream="OutputStreamCopy"/>
+      </data-source>
+    </data-sources>
+  </data-table>
+</liveview-configuration>

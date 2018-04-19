@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.6.6">
+    <add>
+        <annotations>
+            <annotation name="hygienic"/>
+        </annotations>
+        <named-schemas>
+            <schema name="EMSHeaderSchema">
+                <field name="jmsCorrelationID" type="string"/>
+                <field name="jmsDestination" type="string"/>
+                <field name="jmsDeliveryMode" type="int"/>
+                <field name="jmsExpiration" type="long"/>
+                <field name="jmsMessageID" type="string"/>
+                <field name="jmsPriority" type="int"/>
+                <field name="jmsRedelivered" type="bool"/>
+                <field name="jmsReplyTo" type="string"/>
+                <field name="jmsTimestamp" type="timestamp"/>
+                <field name="jmsType" type="string"/>
+            </schema>
+            <schema name="EMSProperties">
+                <field name="MyProperty" type="string"/>
+            </schema>
+        </named-schemas>
+        <data name="ContainerID" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="vid" type="string"/>
+                    <field name="ContainerNumber" type="string"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="vid"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <box disabled="true" name="Java" type="java">
+            <output port="1" stream="out:Java_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.EMSConsumer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="SEND_SB7"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="jmsBodySchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;message&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VesselID&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VesselName&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;QuayCraneNumber&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;ContainerNumber&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;JobType&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;time_ECS_recv&quot; type=&quot;timestamp&quot;/&gt;&#13;&#10;    &lt;field name=&quot;time_ECS_send&quot; type=&quot;timestamp&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VehicleId&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="jmsPropertiesSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;message&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="maxMsgsInFlight" value=""/>
+            <param name="serverName" value="Server"/>
+        </box>
+        <box name="Send_SB7_Sol_Recv" type="java">
+            <output port="1" stream="out:Send_SB7_Sol_Recv_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.JMSConsumer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="SEND_SB7"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="jmsBodySchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;message&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VesselID&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VesselName&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;QuayCraneNumber&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;ContainerNumber&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;JobType&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;time_ECS_recv&quot; type=&quot;timestamp&quot;/&gt;&#13;&#10;    &lt;field name=&quot;time_ECS_send&quot; type=&quot;timestamp&quot;/&gt;&#13;&#10;    &lt;field name=&quot;VehicleId&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="jmsPropertiesSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#13;&#10;"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="maxMsgsInFlight" value=""/>
+            <param name="serverName" value="Server_Solace"/>
+        </box>
+        <box name="AddTime" type="map">
+            <input port="1" stream="out:Send_SB7_Sol_Recv_1"/>
+            <output port="1" stream="LDM_Latency"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="latency_JMS">to_milliseconds(now()) - to_milliseconds(input1.time_ECS_send)</include>
+                    <include field="latency_ECS_JMS">to_milliseconds(now()) - to_milliseconds(input1.time_ECS_recv)</include>
+                    <include field="record_time">now()</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:Send_SB7_Sol_Recv_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="LDM_Latency" scope="public"/>
+        <box name="Filter" type="filter">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="OutputStream"/>
+            <output port="2" stream="out:Filter_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="isnull(message)"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <output-stream name="OutputStream"/>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Filter_2"/>
+            <output port="1" stream="OutputStream2"/>
+            <output port="2" stream="out:Split_2"/>
+            <output port="3" stream="out:Split_3"/>
+            <param name="output-count" value="3"/>
+        </box>
+        <output-stream name="OutputStream2"/>
+        <box name="Java2" type="java">
+            <input port="1" stream="out:Split_3"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.EMSProducer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="ContainerID"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="emitMsgSentTuples" value="true"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="publishNulls" value="false"/>
+            <param name="serverName" value="Server"/>
+        </box>
+        <box name="Map2" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:Map2_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">'start'</include>
+                    <include field="value">1.0</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map3" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:Map3_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">'start'</include>
+                    <include field="value">1.0</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map9" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:Map9_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="ContainerNumber"/>
+                    <include field="VehicleId"/>
+                </item>
+            </target-list>
+        </box>
+        <box name="InputAdapter" type="inputadapter">
+            <input port="1" stream="out:Map2_1"/>
+            <output port="1" stream="out:InputAdapter_1"/>
+            <output port="2" stream="out:InputAdapter_2"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.sbfeedsim.SBFeedsim"/>
+            <param name="enableControlPort" value="true"/>
+            <param name="filenameFieldName" value=""/>
+            <param name="logLevel" value="INFO"/>
+            <param name="reportRateS" value="0"/>
+            <param name="sbfsFileName" value="feeder.sbfs"/>
+            <param name="waitForStartCommand" value="false"/>
+        </box>
+        <box name="InputAdapterCopy" type="inputadapter">
+            <input port="1" stream="out:Map3_1"/>
+            <output port="1" stream="out:InputAdapterCopy_1"/>
+            <output port="2" stream="out:InputAdapterCopy_2"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.sbfeedsim.SBFeedsim"/>
+            <param name="enableControlPort" value="true"/>
+            <param name="filenameFieldName" value=""/>
+            <param name="logLevel" value="INFO"/>
+            <param name="reportRateS" value="0"/>
+            <param name="sbfsFileName" value="feeder2.sbfs"/>
+            <param name="waitForStartCommand" value="false"/>
+        </box>
+        <box name="Map7" type="map">
+            <input port="1" stream="out:Map2_1"/>
+            <output port="1" stream="out:Map7_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="jmsHeader">EMSHeaderSchema(null,null,null,null,null,4,null,null,null,null)</include>
+                    <include field="jmsProperties">EMSProperties("My property's value")</include>
+                    <include field="message">"AGV Assigned"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Query" type="query">
+            <input port="1" stream="out:Map9_1"/>
+            <output port="1" stream="out:Query_1"/>
+            <dataref id="querytable" name="ContainerID"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="vid"/>
+            <param name="key-value.0" value="input1.VehicleId"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="ContainerNumber">input1.ContainerNumber</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="AGVAssigned" type="java">
+            <input port="1" stream="out:Map7_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.EMSProducer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="ASSIGN_TO_AGV"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="emitMsgSentTuples" value="false"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="publishNulls" value="false"/>
+            <param name="serverName" value="Server"/>
+        </box>
+        <box name="Sequence" type="seqnum">
+            <input port="1" stream="out:InputAdapter_2"/>
+            <output port="1" stream="out:Sequence_1"/>
+            <param name="output-field" value="id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="Sequence2" type="seqnum">
+            <input port="1" stream="out:InputAdapterCopy_2"/>
+            <output port="1" stream="out:Sequence2_1"/>
+            <param name="output-field" value="id"/>
+            <param name="sequence-id" value="sequence2id"/>
+            <param name="update-expression" value="sequence2id + 1"/>
+        </box>
+        <box name="Gather" type="gather">
+            <input port="1" stream="out:Sequence_1"/>
+            <input port="2" stream="out:Sequence2_1"/>
+            <output port="1" stream="OutputStream4"/>
+            <target-list>
+                <item name="input1" prefix="input1_" selection="all"/>
+                <item name="input2" prefix="input2_" selection="all"/>
+            </target-list>
+            <param name="key-field" value="id"/>
+            <param name="output-last-time-field" value="false"/>
+            <param name="emit-on-completion" value="true"/>
+            <param name="replacement-type" value="keep_first"/>
+        </box>
+        <output-stream name="OutputStream4"/>
+        <box name="Map" type="map">
+            <input port="1" stream="OutputStream4"/>
+            <output port="1" stream="out:Map_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="veh">input1_veh</include>
+                    <include field="Lat">input1_Lat</include>
+                    <include field="Long">input1_Long</include>
+                    <include field="id">input1_id</include>
+                    <include field="Lat1">input2_Lat1</include>
+                    <include field="Long1">input2_Long1</include>
+                    <include field="Lat2">input2_Lat2</include>
+                    <include field="Long2">input2_Long2</include>
+                    <include field="Status">input1_Status</include>
+                    <include field="time">seconds(1.0)</include>
+                    <include field="StreamStatus">input1_StreamStatus</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:Map_1"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="input1.StreamStatus ='stop'"/>
+        </box>
+        <box name="Map4" type="map">
+            <input port="1" stream="out:Map_1"/>
+            <output port="1" stream="OutputStream3"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="AGVId">input1.veh</include>
+                    <include field="Lat">input1.Lat</include>
+                    <include field="Long">input1.Long</include>
+                    <include field="jmsProperties">EMSProperties("My property's value")</include>
+                    <include field="jmsHeader">EMSHeaderSchema(null,null,null,null,null,4,null,null,null,null)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map5" type="map">
+            <input port="1" stream="out:Map_1"/>
+            <output port="1" stream="out:Map5_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="delay">sleep(input1.time)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="OutputStream3"/>
+        <box name="Map6" type="map">
+            <input port="1" stream="out:Map5_1"/>
+            <output port="1" stream="out:Map6_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <remove field="delay"/>
+                    <remove field="time"/>
+                    <remove field="StreamStatus"/>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map8" type="map">
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="out:Map8_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="jmsHeader">EMSHeaderSchema(null,null,null,null,null,4,null,null,null,null)</include>
+                    <include field="jmsProperties">EMSProperties("My property's value")</include>
+                    <include field="message">"Job Completed"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="SendAGVDetails" type="java">
+            <input port="1" stream="OutputStream3"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.EMSProducer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="ASSIGN_TO_Q"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="emitMsgSentTuples" value="true"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="logLevel" value="ALL"/>
+            <param name="publishNulls" value="false"/>
+            <param name="serverName" value="Server"/>
+        </box>
+        <box name="AssigntoQuay" type="java">
+            <input port="1" stream="out:Map8_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.jms2.EMSProducer"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="destinationName" value="ASSIGN_TO_QUAY"/>
+            <param name="destinationType" value="Preconfigured"/>
+            <param name="emitMsgSentTuples" value="false"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="publishNulls" value="false"/>
+            <param name="serverName" value="Server"/>
+        </box>
+        <box name="Query2" type="query">
+            <input port="1" stream="out:Map6_1"/>
+            <output port="1" stream="out:Query2_1"/>
+            <dataref id="querytable" name="ContainerID"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="vid"/>
+            <param name="key-lowerbound-value.0" value="input1.veh"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-explicit"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <expressions>
+                    <include field="ContainerNumber">current.ContainerNumber</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="ContainerNumber">""</set>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map10" type="map">
+            <input port="1" stream="out:Query2_1"/>
+            <output port="1" stream="OutputStreamCopy"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="ContainerNumber">if (input1.Status == "In transit  to QC2") then ContainerNumber else ""</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="OutputStreamCopy" scope="public"/>
+    </add>
+</modify>

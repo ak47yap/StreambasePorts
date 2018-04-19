@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<streambase-configuration xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/sbconf/">
+    <!--Include common configuration settings for the project.-->
+    <sb-include file="./sbd-common.sbconf"/>
+
+<adapter-configurations>
+        <adapter-configuration name="jms">
+            <sb-jms-adapter-config adapter-class="com.streambase.sb.adapter.jms2.JMSConsumer">
+  <jms-servers>
+    <jms-server connection-factory-name="ConnectionFactory" name="Server" provider-context-factory="com.tibco.tibjms.naming.TibjmsInitialContextFactory" provider-name="TIBCO EMS" provider-url="tibjmsnaming://localhost:7222" server-reconnect-interval="30" username="admin">
+      <destinations>
+        <destination acknowledge-mode="CLIENT_ACKNOWLEDGE" is-topic="false" name="SEND_SB7" priority="4"/>
+        <destination name="ContainerID" priority="4"/>
+        <destination name="ASSIGN_TO_Q" priority="4" subscriber-name=""/>
+        <destination name="ASSIGN_TO_AGV" priority="4"/>
+        <destination name="ASSIGN_TO_QUAY" priority="4"/>
+      </destinations>
+    </jms-server>
+    <jms-server connection-factory-name="ConnectionFactory" jndi-security-credentials="wHpKWTK9sPjgjKwJhbYGwCltJtnGKF2wiOCrjRog7+5px7jnL/FabWi4dPtcIk55wMwdnPiY82bVF/fH2AproA==" jndi-security-principal="default" name="Server_Solace" password="wHpKWTK9sPjgjKwJhbYGwCltJtnGKF2wiOCrjRog7+5px7jnL/FabWi4dPtcIk55wMwdnPiY82bVF/fH2AproA==" provider-context-factory="com.solacesystems.jndi.SolJNDIInitialContextFactory" provider-name="Solace" provider-url="smf://sgdemo1.solace.com:55555" server-reconnect-interval="30" username="default">
+      <jndi-extra-properties>
+        <extra-property name="Solace_JMS_VPN" value="PSAPOCcore"/>
+      </jndi-extra-properties>
+      <destinations>
+        <destination acknowledge-mode="CLIENT_ACKNOWLEDGE" is-topic="false" name="SEND_SB7" priority="4"/>
+        <destination name="ContainerID" priority="4"/>
+        <destination name="ASSIGN_TO_Q" priority="4" subscriber-name=""/>
+        <destination name="ASSIGN_TO_AGV" priority="4"/>
+        <destination name="ASSIGN_TO_QUAY" priority="4"/>
+      </destinations>
+    </jms-server>
+  </jms-servers>
+</sb-jms-adapter-config>
+        </adapter-configuration>
+    </adapter-configurations>
+</streambase-configuration>

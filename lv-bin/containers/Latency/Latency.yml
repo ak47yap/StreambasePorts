@@ -1,0 +1,31 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+TableName: Latency
+TableType: Data
+PublishType: Realtime
+PrimaryKey: record_time
+Fields: 
+  - !java.util.LinkedHashMap
+    field: latency_JMS long
+  - !java.util.LinkedHashMap
+    field: latency_ECS_JMS long
+  - !java.util.LinkedHashMap
+    field: record_time timestamp
+FieldUpdateRules: 
+  - 
+    - !java.util.LinkedHashMap
+      Test: true
+      Assignments: []
+Indices: 
+  - !java.util.LinkedHashMap
+    index: record_time
+Configuration: !java.util.LinkedHashMap
+  BuildOnServerStart: off
+  BuildSbarOnServerStart: off
+  LoadOnServerStart: on
+  LoadFromSbar: off
+  NumberOfThreads: 1
+  NumberOfConcurrentSnaps: 0
+  MinCacheSizeForEval: 1000
+  MaxCacheSizeForEval: 1000
+  RestoreDataOnStart: off

@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.3.2bacay_178172">
+    <add generator="gui">
+        <import from="CQInterfaces.sbint" postfix="" prefix=""/>
+        <import from="QueryServerCommonSchema.sbapp"/>
+        <named-schemas>
+            <schema name="DataCacheSchema">
+                <parent-schemas>
+                    <parent-schema name="TableParentSchema"/>
+                    <parent-schema name="QueryParentSchema"/>
+                    <parent-schema name="TableDataOnlySchema"/>
+                </parent-schemas>
+                <field description="" name="_InClientView" type="bool"/>
+                <field description="" name="_ShardNumber" type="int"/>
+            </schema>
+            <schema name="TopNSchema">
+                <field description="" name="_OrderBy" type="string"/>
+                <field description="" name="_Direction" type="string"/>
+                <field description="" name="_Limit" type="int"/>
+            </schema>
+        </named-schemas>
+        <parameter-definitions>
+            <parameter default="1" name="SHARDS"/>
+            <parameter default="1" name="CacheSizeMultiplier"/>
+        </parameter-definitions>
+        <schema name="schema:WriteContDataUpdate">
+            <parent-schemas>
+                <parent-schema name="QueryContTopN"/>
+            </parent-schemas>
+            <field description="" name="_TopN" type="tuple" value="TopNSchema"/>
+        </schema>
+        <data name="DataCache" type="querytable">
+            <primary-index type="btree">
+                <field name="CQSInternalID"/>
+                <field name="CQSQueryID"/>
+                <field name="CQSConnectionID"/>
+            </primary-index>
+            <index type="btree">
+                <field name="CQSConnectionID"/>
+                <field name="CQSQueryID"/>
+            </index>
+            <param name="storage-method" value="memory"/>
+            <param name="schema" value="DataCacheSchema"/>
+            <param name="replicated" value="false"/>
+            <param name="shared-table" value="input"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="WriteContDataEnter" schema="QueryContTopN">
+        </stream>
+        <stream name="WriteContDataUpdate" schema="schema:WriteContDataUpdate">
+        </stream>
+        <box name="StillThere" type="query">
+            <dataref id="querytable" name="DataCache"/>
+            <input port="1" stream="WriteContDataUpdate"/>
+            <output port="1" stream="out:StillThere_1"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-lowerbound-value.0" value="input.CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-lowerbound-value.1" value="input.CQSQueryID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-lowerbound-value.2" value="input.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" prefix="_Cached" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="WriteContData" type="query">
+            <dataref id="querytable" name="DataCache"/>
+            <input port="1" stream="WriteContDataEnter"/>
+            <output port="1" stream="out:WriteContData_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input.CQSInternalID"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-value.1" value="input.CQSQueryID"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-value.2" value="input.CQSConnectionID"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema_logical_value" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSServerID">input.CQSServerID</set>
+                    <set field="CQSSequenceNumber">input.CQSSequenceNumber</set>
+                    <set field="CQSMessageType">input.CQSMessageType</set>
+                    <set field="CQSMatchNumber">input.CQSMatchNumber</set>
+                    <set field="CQSScopeTransition">input.CQSScopeTransition</set>
+                    <set field="CQSErrorCode">input.CQSErrorCode</set>
+                    <set field="_DueTime">input._DueTime</set>
+                    <set field="_ArrivalTime">input._ArrivalTime</set>
+                    <set field="_DelayedMilliSeconds">input._DelayedMilliSeconds</set>
+                    <set field="_MaxRecordsLimit">input._MaxRecordsLimit</set>
+                    <set field="_SnapshotType">input._SnapshotType</set>
+                    <set field="_Time">input._Time</set>
+                    <set field="_OrderBy">input._OrderBy</set>
+                    <set field="_Direction">input._Direction</set>
+                    <set field="CQSElapsedTime">input.CQSElapsedTime</set>
+                    <set field="_ShardNumber">input._ShardNumber</set>
+                    <set field="_InClientView">false</set>
+                    <set field="TableName">input.TableName</set>
+                    <set field="RecordCount">input.RecordCount</set>
+                    <set field="InboundTuplesPerSec">input.InboundTuplesPerSec</set>
+                    <set field="TotalQueuedTuples">input.TotalQueuedTuples</set>
+                    <set field="MBMemoryUsed">input.MBMemoryUsed</set>
+                    <set field="TotalTuplesPublished">input.TotalTuplesPublished</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSSequenceNumber">coalesce(input.CQSSequenceNumber, old.CQSSequenceNumber)</set>
+                    <set field="CQSServerID">coalesce(input.CQSServerID, old.CQSServerID)</set>
+                    <set field="CQSErrorCode">coalesce(input.CQSErrorCode, old.CQSErrorCode)</set>
+                    <set field="CQSMessageType">coalesce(input.CQSMessageType, old.CQSMessageType)</set>
+                    <set field="CQSMatchNumber">coalesce(input.CQSMatchNumber, old.CQSMatchNumber)</set>
+                    <set field="CQSScopeTransition">coalesce(input.CQSScopeTransition, old.CQSScopeTransition)</set>
+                    <set field="_DueTime">coalesce(input._DueTime, old._DueTime)</set>
+                    <set field="_ArrivalTime">coalesce(input._ArrivalTime, old._ArrivalTime)</set>
+                    <set field="_DelayedMilliSeconds">coalesce(input._DelayedMilliSeconds, old._DelayedMilliSeconds)</set>
+                    <set field="_Time">coalesce(input._Time, old._Time)</set>
+                    <set field="_SnapshotType">coalesce(input._SnapshotType, old._SnapshotType)</set>
+                    <set field="_OrderBy">coalesce(input._OrderBy, old._OrderBy)</set>
+                    <set field="_Direction">coalesce(input._Direction, old._Direction)</set>
+                    <set field="CQSElapsedTime">coalesce(input.CQSElapsedTime, old.CQSElapsedTime)</set>
+                    <set field="_ShardNumber">coalesce(input._ShardNumber, old._ShardNumber)</set>
+                    <set field="TableName">coalesce(input.TableName, old.TableName)</set>
+                    <set field="RecordCount">coalesce(input.RecordCount, old.RecordCount)</set>
+                    <set field="InboundTuplesPerSec">coalesce(input.InboundTuplesPerSec, old.InboundTuplesPerSec)</set>
+                    <set field="TotalQueuedTuples">coalesce(input.TotalQueuedTuples, old.TotalQueuedTuples)</set>
+                    <set field="MBMemoryUsed">coalesce(input.MBMemoryUsed, old.MBMemoryUsed)</set>
+                    <set field="TotalTuplesPublished">coalesce(input.TotalTuplesPublished, old.TotalTuplesPublished)</set>
+
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:StillThere_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="WriteToIndex" type="query">
+            <dataref id="querytable" name="DataCache"/>
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="NewOrderRequest"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input.CQSInternalID"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-value.1" value="input.CQSQueryID"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-value.2" value="input.CQSConnectionID"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="_New">tuple(input.* AS *)</include>
+                    <include field="_Old">tuple(old.* as *)</include>
+                    <include field="_TaPredicateExpr">"CQSConnectionID=='" + input.CQSConnectionID + "' &amp;&amp; CQSQueryID=='"  +  input.CQSQueryID + "'"</include>
+                    <include field="_TaOrderBy">input._TopN._OrderBy  + ",CQSInternalID"</include>
+                    <include field="_TaDirection">input._TopN._Direction  + ",a"</include>
+                    <include field="_TaMaxRecordsLimit">int(null) -- need to scan all data items</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema_logical_value" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSServerID">input.CQSServerID</set>
+                    <set field="CQSSequenceNumber">input.CQSSequenceNumber</set>
+                    <set field="CQSMessageType">input.CQSMessageType</set>
+                    <set field="CQSMatchNumber">input.CQSMatchNumber</set>
+                    <set field="CQSScopeTransition">input.CQSScopeTransition</set>
+                    <set field="CQSErrorCode">input.CQSErrorCode</set>
+                    <set field="_DueTime">input._DueTime</set>
+                    <set field="_ArrivalTime">input._ArrivalTime</set>
+                    <set field="_DelayedMilliSeconds">input._DelayedMilliSeconds</set>
+                    <set field="_MaxRecordsLimit">input._MaxRecordsLimit</set>
+                    <set field="_SnapshotType">input._SnapshotType</set>
+                    <set field="_Time">input._Time</set>
+                    <set field="_OrderBy">input._OrderBy</set>
+                    <set field="_Direction">input._Direction</set>
+                    <set field="CQSElapsedTime">input.CQSElapsedTime</set>
+                    <set field="_ShardNumber">input._ShardNumber</set>
+                    <set field="_InClientView">false</set>
+                    <set field="TableName">input.TableName</set>
+                    <set field="RecordCount">input.RecordCount</set>
+                    <set field="InboundTuplesPerSec">input.InboundTuplesPerSec</set>
+                    <set field="TotalQueuedTuples">input.TotalQueuedTuples</set>
+                    <set field="MBMemoryUsed">input.MBMemoryUsed</set>
+                    <set field="TotalTuplesPublished">input.TotalTuplesPublished</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSSequenceNumber">coalesce(input.CQSSequenceNumber, old.CQSSequenceNumber)</set>
+                    <set field="CQSServerID">coalesce(input.CQSServerID, old.CQSServerID)</set>
+                    <set field="CQSErrorCode">coalesce(input.CQSErrorCode, old.CQSErrorCode)</set>
+                    <set field="CQSMessageType">coalesce(input.CQSMessageType, old.CQSMessageType)</set>
+                    <set field="CQSMatchNumber">coalesce(input.CQSMatchNumber, old.CQSMatchNumber)</set>
+                    <set field="CQSScopeTransition">coalesce(input.CQSScopeTransition, old.CQSScopeTransition)</set>
+                    <set field="_DueTime">coalesce(input._DueTime, old._DueTime)</set>
+                    <set field="_ArrivalTime">coalesce(input._ArrivalTime, old._ArrivalTime)</set>
+                    <set field="_DelayedMilliSeconds">coalesce(input._DelayedMilliSeconds, old._DelayedMilliSeconds)</set>
+                    <set field="_Time">coalesce(input._Time, old._Time)</set>
+                    <set field="_SnapshotType">coalesce(input._SnapshotType, old._SnapshotType)</set>
+                    <set field="_OrderBy">coalesce(input._OrderBy, old._OrderBy)</set>
+                    <set field="_Direction">coalesce(input._Direction, old._Direction)</set>
+                    <set field="CQSElapsedTime">coalesce(input.CQSElapsedTime, old.CQSElapsedTime)</set>
+                    <set field="_ShardNumber">coalesce(input._ShardNumber, old._ShardNumber)</set>
+                    <set field="TableName">coalesce(input.TableName, old.TableName)</set>
+                    <set field="RecordCount">coalesce(input.RecordCount, old.RecordCount)</set>
+                    <set field="InboundTuplesPerSec">coalesce(input.InboundTuplesPerSec, old.InboundTuplesPerSec)</set>
+                    <set field="TotalQueuedTuples">coalesce(input.TotalQueuedTuples, old.TotalQueuedTuples)</set>
+                    <set field="MBMemoryUsed">coalesce(input.MBMemoryUsed, old.MBMemoryUsed)</set>
+                    <set field="TotalTuplesPublished">coalesce(input.TotalTuplesPublished, old.TotalTuplesPublished)</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DataCacheSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="goneMissing" type="filter">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:goneMissing_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="isnull(_CachedCQSInternalID)"/>
+        </box>
+        <output-stream name="NewOrderRequest">
+        </output-stream>
+<box name="WriteOld" type="query">
+    <dataref id="querytable" name="DataCache"/>
+    <input port="1" stream="out:goneMissing_1"/>
+    <output port="1" stream="out:WriteOld_1"/>
+    <param name="operation" value="write"/>
+    <param name="where" value="primary-key"/>
+    <param name="key-field.0" value="CQSInternalID"/>
+    <param name="key-value.0" value="input.CQSInternalID"/>
+    <param name="key-field.1" value="CQSQueryID"/>
+    <param name="key-value.1" value="input.CQSQueryID"/>
+    <param name="key-field.2" value="CQSConnectionID"/>
+    <param name="key-value.2" value="input.CQSConnectionID"/>
+    <param name="write-type" value="insert"/>
+    <param name="if-write-fails" value="ignore"/>
+    <param name="no-match-mode" value="output-no-match-null"/>
+    <param name="order-by-direction" value="none"/>
+    <target-list>
+        <item name="input" selection="all"/>
+        <item name="old" selection="none"/>
+        <item name="new" selection="none"/>
+    </target-list>
+    <target-list goal-schema="DataCacheSchema_logical_value" name="insert">
+        <item name="input" selection="all"/>
+        <expressions>
+            <set field="_InClientView">false</set>
+            <set field="*">_Old.*</set>
+            <set field="_MaxRecordsLimit">_TopN._Limit</set>
+        </expressions>
+    </target-list>
+    <target-list goal-schema="DataCacheSchema" name="update">
+        <item name="input" selection="all"/>
+    </target-list>
+    <target-list goal-schema="DataCacheSchema" name="no-match">
+        <item name="input" selection="all"/>
+    </target-list>
+</box>
+    </add>
+</modify>

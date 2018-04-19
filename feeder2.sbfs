@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbfs:Simulation xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:sbfs="http://www.streambase.com/schemas/feedsim/02/SBFS">
+  <SimStreams Name="in1">
+    <ProcessingOptions DataRatePerSecond="1.0" DataGenerationMethod="Custom"/>
+    <Schema>
+      <Fields Name="Lat1" DataTypeName="double" Description="">
+        <Distribution GenerationMethod="Constant" ConstantValue="1.2655778"/>
+        <DataSourceMapping/>
+      </Fields>
+      <Fields Name="Long1" DataTypeName="double" Description="">
+        <Distribution GenerationMethod="Constant" ConstantValue="103.8511417"/>
+        <DataSourceMapping/>
+      </Fields>
+      <Fields Name="Lat2" DataTypeName="double" Description="">
+        <Distribution GenerationMethod="Constant" ConstantValue="1.262177"/>
+        <DataSourceMapping/>
+      </Fields>
+      <Fields Name="Long2" DataTypeName="double" Description="">
+        <Distribution GenerationMethod="Constant" ConstantValue="103.8460344"/>
+        <DataSourceMapping/>
+      </Fields>
+    </Schema>
+  </SimStreams>
+</sbfs:Simulation>

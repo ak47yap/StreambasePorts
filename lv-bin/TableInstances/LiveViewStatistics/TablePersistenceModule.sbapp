@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.6.4peery_236502">
+    <add>
+        <import from="CQInterfaces.sbint"/>
+        <import from="QueryServerCommonSchema.sbapp"/>
+        <parameter-definitions>
+            <parameter default="data.db" name="dbfilename"/>
+        </parameter-definitions>
+        <dynamic-variables>
+            <dynamic-variable initial-expression="long(0)" name="HighestCQSInternalID" setter-expression="if (CQSInternalID &gt; HighestCQSInternalID) then CQSInternalID else HighestCQSInternalID" setter-stream="HighestID"/>
+        </dynamic-variables>
+        <data name="MainTable" shared="false" source="input" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <param name="table-schema" value="Orders"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="TheLastGoodRecord" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="PublisherID" type="string"/>
+                    <field name="PublisherSN" type="long"/>
+                    <field name="CQSInternalID" type="long"/>
+                    <field name="CQSSequenceNumber" type="long"/>
+                    <field name="RecoveredFromFile" type="bool"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="PublisherID"/>
+                    <field name="RecoveredFromFile"/>
+                </primary-index>
+                <index type="btree">
+                    <field name="CQSSequenceNumber"/>
+                </index>
+                <index type="btree">
+                    <field name="CQSInternalID"/>
+                </index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="DataIn" schema="TableSchema" scope="public"/>
+        <stream name="LastGoodRecordFromRecovey">
+            <schema>
+                <field name="PublisherID" type="string"/>
+                <field name="PublisherSN" type="long"/>
+                <field name="CQSInternalID" type="long"/>
+                <field name="CQSSequenceNumber" type="long"/>
+                <field name="CQSReferredCount" type="long"/>
+                <field name="CQSErrorCode" type="int"/>
+                <field name="_DueTime" type="long"/>
+                <field name="_ArrivalTime" type="long"/>
+                <field name="Symbol_UpperCase" type="string"/>
+                <field name="OrderID" type="string"/>
+                <field name="Qty" type="double"/>
+                <field name="OrdStatus" type="string"/>
+                <field name="Price" type="double"/>
+                <field name="Side" type="string"/>
+                <field name="Symbol" type="string"/>
+            </schema>
+        </stream>
+        <stream name="QueryTheLastGoodRecord" schema="TheLastGoodRecordQuerySchema"/>
+        <stream name="RecoverSignalIn" schema="RecoverSignalSchema" scope="public"/>
+        <stream name="ResetHighestID">
+            <schema>
+                <field name="CQSConnectionID" type="string"/>
+                <field name="PublisherID" type="string"/>
+                <field name="LowestPublishedSN" type="long"/>
+                <field name="LowestPersistedSN" type="long"/>
+                <field name="HighestPublishedSN" type="long"/>
+                <field name="HighestPersistedSN" type="long"/>
+                <field name="Tablename" type="string"/>
+            </schema>
+            <param name="connection" value="getContainer() + &quot;.ResetHighestID&quot;"/>
+        </stream>
+        <output-stream name="DataRecoverSignalOut" schema="RecoverSignalSchema"/>
+        <box name="KeepTheLastRecordFromDataSource" type="query">
+            <input port="1" stream="DataIn"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="PublisherID"/>
+            <param name="key-value.0" value="input1.PublisherID"/>
+            <param name="key-field.1" value="RecoveredFromFile"/>
+            <param name="key-value.1" value="false"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="PublisherSN">input.PublisherSN</set>
+                    <set field="CQSInternalID">input.CQSInternalID</set>
+                    <set field="CQSSequenceNumber">input.CQSSequenceNumber</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <box name="MainHighestSN" type="query">
+            <input port="1" stream="ResetHighestID"/>
+            <output port="1" stream="out:MainHighestSN_1"/>
+            <dataref id="querytable" name="MainTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="where-expression" value="(input.PublisherID == current.PublisherID)"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="LowestPersistedSN"/>
+                </item>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <expressions>
+                    <include field="LowestPersistedSN">max(PublisherSN)</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="PeerRecoveryOp" type="outputadapter">
+            <input port="1" stream="RecoverSignalIn"/>
+            <output port="1" stream="out:PeerRecoveryOp_1"/>
+            <output port="2" stream="out:PeerRecoveryOp_2"/>
+            <output port="3" stream="out:PeerRecoveryOp_3"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.liveview.engine.recovery.PeerRecovery"/>
+            <param name="tableName" value="MainTable"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="QueryTheLastGoodRecord"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="GetHighestRow" type="query">
+            <input port="1" stream="out:MainHighestSN_1"/>
+            <output port="1" stream="out:GetHighestRow_1"/>
+            <dataref id="querytable" name="MainTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="where-expression" value="(input.PublisherID == current.PublisherID) &amp;&amp; (input.LowestPersistedSN == PublisherSN)"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none">
+                    <include field="CQSInternalID"/>
+                    <include field="CQSSequenceNumber"/>
+                </item>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="PeerRecoveryLog" type="outputadapter">
+            <input port="1" stream="out:PeerRecoveryOp_1"/>
+            <output port="1" stream="out:PeerRecoveryLog_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="compressFrequentMessages" value="false"/>
+            <param name="compressMaxWindowSize" value="5.0"/>
+            <param name="customFormat" value=""/>
+            <param name="customFormatExpression" value=""/>
+            <param name="customFormatType" value="Basic"/>
+            <param name="emitLoggedTuples" value="true"/>
+            <param name="encodeSubType" value="Map"/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="includeNullFields" value="false"/>
+            <param name="logLevel" value="Debug"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="loggerFormatType" value="CSV"/>
+            <param name="messageIdentifier" value="LVDebugRecovery"/>
+            <param name="messageIdentifierExpression" value=""/>
+            <param name="messageIdentifierType" value="Basic"/>
+            <param name="messagePrefix" value=""/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="timestampAsLong" value="false"/>
+            <param name="timestampFormat" value="yyyy-MM-dd HH:mm:ss.SSSZ"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="QueryByID" type="filter">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:QueryByID_1"/>
+            <output port="2" stream="out:QueryByID_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="notnull(input1.PublisherID)"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="SetDone" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:SetDone_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="Done">true</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:PeerRecoveryOp_2"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="DataOut"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Split5" type="split">
+            <input port="1" stream="out:PeerRecoveryOp_3"/>
+            <output port="1" stream="out:Split5_1"/>
+            <output port="2" stream="RecoveryDoneSignalOut"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="DataOut" schema="TableSchema" scope="public"/>
+        <output-stream name="RecoveryDoneSignalOut" schema="RecoverSignalSchema" scope="public"/>
+        <box name="GetLastestSeq" type="query">
+            <input port="1" stream="out:Split5_1"/>
+            <output port="1" stream="RecoveredIDOut"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="all-rows"/>
+            <param name="limit" value="1"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="CQSInternalID"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="LastCQSSequenceID">current.CQSSequenceNumber</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="KeepTheLastRecordFromPeer" type="query">
+            <input port="1" stream="out:Split2_1"/>
+            <output port="1" stream="out:KeepTheLastRecordFromPeer_1"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="PublisherID"/>
+            <param name="key-value.0" value="input.PublisherID"/>
+            <param name="key-field.1" value="RecoveredFromFile"/>
+            <param name="key-value.1" value="true"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="PublisherSN">input1.PublisherSN</set>
+                    <set field="CQSInternalID">input1.CQSInternalID</set>
+                    <set field="CQSSequenceNumber">input1.CQSSequenceNumber</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="PublisherSN">if (input1.PublisherSN &gt; old.PublisherSN) then input1.PublisherSN else old.PublisherSN</set>
+                    <set field="CQSInternalID">if (input1.CQSInternalID &gt; old.CQSInternalID) then input1.CQSInternalID else old.CQSInternalID</set>
+                    <set field="CQSSequenceNumber">if (input1.CQSSequenceNumber &gt; old.CQSSequenceNumber) then input1.CQSSequenceNumber else old.CQSSequenceNumber</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="PublisherSN">input1.PublisherSN</set>
+                    <set field="CQSInternalID">input1.CQSInternalID</set>
+                    <set field="CQSSequenceNumber">input1.CQSSequenceNumber</set>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ReadAll" type="query">
+            <input port="1" stream="out:QueryByID_2"/>
+            <output port="1" stream="out:ReadAll_1"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="all-rows"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="CQSConnectionID"/>
+                </item>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <box name="ReadByID" type="query">
+            <input port="1" stream="out:QueryByID_1"/>
+            <output port="1" stream="out:ReadByID_1"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="PublisherID"/>
+            <param name="key-lowerbound-value.0" value="input1.PublisherID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-field.1" value="RecoveredFromFile"/>
+            <param name="key-lowerbound-operation.1" value="begin"/>
+            <param name="key-upperbound-operation.1" value="end"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="CQSConnectionID"/>
+                </item>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TheLastGoodRecord" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <box name="UpdateHighestID" type="query">
+            <input port="1" stream="out:GetHighestRow_1"/>
+            <output port="1" stream="out:UpdateHighestID_1"/>
+            <dataref id="querytable" name="TheLastGoodRecord"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="PublisherID"/>
+            <param name="key-value.0" value="input.PublisherID"/>
+            <param name="key-field.1" value="RecoveredFromFile"/>
+            <param name="key-value.1" value="false"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="all"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <output-stream name="RecoveredIDOut" schema="RecoverDoneSignalSchema" scope="public">
+            <param name="connection" value="getContainer() + '.RecoveryDoneSignalIn'"/>
+        </output-stream>
+        <box name="Split4" type="split">
+            <input port="1" stream="out:UpdateHighestID_1"/>
+            <output port="1" stream="out:Split4_1"/>
+            <output port="2" stream="out:Split4_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Union1" type="union">
+            <input port="1" stream="out:ReadByID_1"/>
+            <input port="2" stream="out:ReadAll_1"/>
+            <output port="1" stream="out:Union1_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="GotHighestIDLog" type="outputadapter">
+            <input port="1" stream="out:Split4_2"/>
+            <output port="1" stream="out:GotHighestIDLog_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="compressFrequentMessages" value="false"/>
+            <param name="compressMaxWindowSize" value="5.0"/>
+            <param name="customFormat" value=""/>
+            <param name="customFormatExpression" value=""/>
+            <param name="customFormatType" value="Basic"/>
+            <param name="emitLoggedTuples" value="true"/>
+            <param name="encodeSubType" value="Map"/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="includeNullFields" value="false"/>
+            <param name="logLevel" value="Debug"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="loggerFormatType" value="CSV"/>
+            <param name="messageIdentifier" value="LVDebugRecovery"/>
+            <param name="messageIdentifierExpression" value=""/>
+            <param name="messageIdentifierType" value="Basic"/>
+            <param name="messagePrefix" value="{ Recovery ID Update }"/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="timestampAsLong" value="false"/>
+            <param name="timestampFormat" value="yyyy-MM-dd HH:mm:ss.SSSZ"/>
+            <param name="verbose" value="true"/>
+        </box>
+        <box name="NullFilter" type="filter">
+            <input port="1" stream="out:Union1_1"/>
+            <output port="1" stream="out:NullFilter_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="notnull(PublisherID)"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:Split4_1"/>
+            <input port="2" stream="out:Split2_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="MakeHighest" type="map">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="HighestID"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="PublisherID"/>
+                    <include field="PublisherSN"/>
+                    <include field="CQSInternalID"/>
+                    <include field="CQSSequenceNumber"/>
+                </item>
+                <expressions>
+                    <include field="RecoveredFromFile">true</include>
+                    <include field="Done">false</include>
+                    <include field="Tablename">string()</include>
+                    <include field="CQSConnectionID">string()</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:NullFilter_1"/>
+            <input port="2" stream="out:SetDone_1"/>
+            <output port="1" stream="LastGoodRecordOut"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="HighestID" schema="TheLastGoodRecordResponseSchema"/>
+        <output-stream name="LastGoodRecordOut">
+            <param name="connection" value="getContainer() + '.TheLastGoodRecordIn'"/>
+        </output-stream>
+    </add>
+</modify>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="ContainerID">
+        <param name="gui:x" value="524"/>
+        <param name="gui:y" value="206"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="AGVAssigned">
+        <param name="gui:x" value="290"/>
+        <param name="gui:y" value="-247"/>
+    </component>
+    <component name="AddTime">
+        <param name="gui:x" value="-306"/>
+        <param name="gui:y" value="3"/>
+    </component>
+    <component name="AssigntoQuay">
+        <param name="gui:x" value="941"/>
+        <param name="gui:y" value="-308"/>
+    </component>
+    <component name="Filter">
+        <param name="gui:x" value="-222"/>
+        <param name="gui:y" value="-96"/>
+    </component>
+    <component name="Filter2">
+        <param name="gui:x" value="718"/>
+        <param name="gui:y" value="-308"/>
+        <param name="gui:bends:1" value="604,40;661,-278"/>
+    </component>
+    <component name="Gather">
+        <param name="gui:x" value="407"/>
+        <param name="gui:y" value="10"/>
+        <param name="gui:bends:1" value="361,-70;385,30"/>
+    </component>
+    <component name="InputAdapter">
+        <param name="gui:x" value="185"/>
+        <param name="gui:y" value="-127"/>
+    </component>
+    <component name="InputAdapterCopy">
+        <param name="gui:x" value="185"/>
+        <param name="gui:y" value="-7"/>
+    </component>
+    <component name="Java">
+        <param name="gui:x" value="-460"/>
+        <param name="gui:y" value="123"/>
+    </component>
+    <component name="Java2">
+        <param name="gui:x" value="55"/>
+        <param name="gui:y" value="212"/>
+        <param name="gui:bends:1" value="-35,33;14,242"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="534"/>
+        <param name="gui:y" value="10"/>
+    </component>
+    <component name="Map10">
+        <param name="gui:x" value="1021"/>
+        <param name="gui:y" value="10"/>
+    </component>
+    <component name="Map2">
+        <param name="gui:x" value="55"/>
+        <param name="gui:y" value="-127"/>
+        <param name="gui:bends:1" value="12,23;42,-97"/>
+    </component>
+    <component name="Map3">
+        <param name="gui:x" value="55"/>
+        <param name="gui:y" value="-7"/>
+    </component>
+    <component name="Map4">
+        <param name="gui:x" value="718"/>
+        <param name="gui:y" value="-89"/>
+        <param name="gui:bends:1" value="623,40;647,-59"/>
+    </component>
+    <component name="Map5">
+        <param name="gui:x" value="718"/>
+        <param name="gui:y" value="10"/>
+    </component>
+    <component name="Map6">
+        <param name="gui:x" value="844"/>
+        <param name="gui:y" value="10"/>
+    </component>
+    <component name="Map7">
+        <param name="gui:x" value="185"/>
+        <param name="gui:y" value="-247"/>
+        <param name="gui:bends:1" value="145,-97;175,-217"/>
+    </component>
+    <component name="Map8">
+        <param name="gui:x" value="844"/>
+        <param name="gui:y" value="-308"/>
+    </component>
+    <component name="Map9">
+        <param name="gui:x" value="55"/>
+        <param name="gui:y" value="92"/>
+        <param name="gui:bends:1" value="2,23;26,122"/>
+    </component>
+    <component name="Query">
+        <param name="gui:x" value="185"/>
+        <param name="gui:y" value="92"/>
+    </component>
+    <component name="Query2">
+        <param name="gui:x" value="941"/>
+        <param name="gui:y" value="10"/>
+    </component>
+    <component name="SendAGVDetails">
+        <param name="gui:x" value="844"/>
+        <param name="gui:y" value="-188"/>
+        <param name="gui:bends:1" value="800,-59;824,-158"/>
+    </component>
+    <component name="Send_SB7_Sol_Recv">
+        <param name="gui:x" value="-460"/>
+        <param name="gui:y" value="3"/>
+    </component>
+    <component name="Sequence">
+        <param name="gui:x" value="290"/>
+        <param name="gui:y" value="-100"/>
+        <param name="gui:bends:1" value="266,-87;270,-70"/>
+    </component>
+    <component name="Sequence2">
+        <param name="gui:x" value="290"/>
+        <param name="gui:y" value="20"/>
+        <param name="gui:bends:1" value="266,33;270,50"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-105"/>
+        <param name="gui:y" value="-7"/>
+        <param name="gui:bends:1" value="-138,-56;-120,23"/>
+    </component>
+    <component name="Union">
+        <param name="gui:x" value="-306"/>
+        <param name="gui:y" value="-96"/>
+        <param name="gui:bends:1" value="-370,33;-346,-66"/>
+    </component>
+    <component name="LDM_Latency">
+        <param name="gui:x" value="-222"/>
+        <param name="gui:y" value="3"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="-105"/>
+        <param name="gui:y" value="-106"/>
+    </component>
+    <component name="OutputStream2">
+        <param name="gui:x" value="55"/>
+        <param name="gui:y" value="-226"/>
+        <param name="gui:bends:1" value="-25,13;27,-196"/>
+    </component>
+    <component name="OutputStream3">
+        <param name="gui:x" value="844"/>
+        <param name="gui:y" value="-89"/>
+    </component>
+    <component name="OutputStream4">
+        <param name="gui:x" value="534"/>
+        <param name="gui:y" value="-89"/>
+        <param name="gui:bends:1" value="494,40;518,-59"/>
+    </component>
+    <component name="OutputStreamCopy">
+        <param name="gui:x" value="1124"/>
+        <param name="gui:y" value="10"/>
+    </component>
+</application-layout>
