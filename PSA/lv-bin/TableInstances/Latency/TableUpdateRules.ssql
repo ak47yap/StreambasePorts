@@ -1,0 +1,14 @@
+IMPORT * FROM "CQInterfaces.sbint" ;
+CREATE INPUT STREAM DataIn InternalEnrichedDataSchema;
+CREATE OUTPUT STREAM DataOut ;
+CREATE INPUT  TABLE QueryTable Orders;
+
+SELECT * FROM DataIn INTO DataOut;
+
+
+
+
+
+
+
+

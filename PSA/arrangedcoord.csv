@@ -1,0 +1,257 @@
+,lat,long,Vehicle,,
+1,1.281281,103.756953,V1,start,In transit to QC1
+5,1.281077,103.756793,V1,,In transit to QC1
+6,1.281281,103.756953,V2,,In transit to QC1
+9,1.280777,103.756653,V1,,In transit to QC1
+10,1.281077,103.756793,V2,,In transit to QC1
+11,1.281281,103.756953,V3,,In transit to QC1
+13,1.280444,103.756428,V1,,In transit to QC1
+14,1.280777,103.756653,V2,,In transit to QC1
+15,1.281077,103.756793,V3,,In transit to QC1
+16,1.281281,103.756953,V4,,In transit to QC1
+17,1.280165,103.756267,V1,,In transit to QC1
+18,1.280444,103.756428,V2,,In transit to QC1
+19,1.280777,103.756653,V3,,In transit to QC1
+20,1.281077,103.756793,V4,,In transit to QC1
+21,1.279865,103.756095,V1,,In transit to QC1
+22,1.280165,103.756267,V2,,In transit to QC1
+23,1.280444,103.756428,V3,,In transit to QC1
+24,1.280777,103.756653,V4,,In transit to QC1
+25,1.279618,103.755956,V1,,In transit to QC1
+26,1.279865,103.756095,V2,,In transit to QC1
+27,1.280165,103.756267,V3,,In transit to QC1
+28,1.280444,103.756428,V4,,In transit to QC1
+29,1.27935,103.755773,V1,,In transit to QC1
+30,1.279618,103.755956,V2,,In transit to QC1
+31,1.279865,103.756095,V3,,In transit to QC1
+32,1.280165,103.756267,V4,,In transit to QC1
+33,1.279039,103.755645,V1,,In transit to QC1
+34,1.27935,103.755773,V2,,In transit to QC1
+35,1.279618,103.755956,V3,,In transit to QC1
+36,1.279865,103.756095,V4,,In transit to QC1
+37,1.27876,103.755451,V1,,In transit to QC1
+38,1.279039,103.755645,V2,,In transit to QC1
+39,1.27935,103.755773,V3,,In transit to QC1
+40,1.279618,103.755956,V4,,In transit to QC1
+41,1.278492,103.755248,V1,,In transit to QC1
+42,1.27876,103.755451,V2,,In transit to QC1
+43,1.279039,103.755645,V3,,In transit to QC1
+44,1.27935,103.755773,V4,,In transit to QC1
+45,1.278256,103.75513,V1,,In transit to QC1
+46,1.278492,103.755248,V2,,In transit to QC1
+47,1.27876,103.755451,V3,,In transit to QC1
+48,1.279039,103.755645,V4,,In transit to QC1
+49,1.278085,103.755387,V1,,In transit to QC1
+50,1.278256,103.75513,V2,,In transit to QC1
+51,1.278492,103.755248,V3,,In transit to QC1
+52,1.27876,103.755451,V4,,In transit to QC1
+53,1.277892,103.755634,V1,,In transit to QC1
+54,1.278085,103.755387,V2,,In transit to QC1
+55,1.278256,103.75513,V3,,In transit to QC1
+56,1.278492,103.755248,V4,,In transit to QC1
+57,1.277741,103.755924,V1,,In transit to QC1
+58,1.277892,103.755634,V2,,In transit to QC1
+59,1.278085,103.755387,V3,,In transit to QC1
+60,1.278256,103.75513,V4,,In transit to QC1
+61,1.277527,103.756235,V1,,In transit  to QC2
+62,1.277741,103.755924,V2,,In transit  to QC2
+63,1.277892,103.755634,V3,,In transit  to QC2
+64,1.278085,103.755387,V4,,In transit  to QC2
+65,1.277312,103.756728,V1,,In transit  to QC2
+66,1.277527,103.756235,V2,,In transit  to QC2
+67,1.277741,103.755924,V3,,In transit  to QC2
+68,1.277892,103.755634,V4,,In transit  to QC2
+69,1.276948,103.757179,V1,,In transit  to QC2
+70,1.277312,103.756728,V2,,In transit  to QC2
+71,1.277527,103.756235,V3,,In transit  to QC2
+72,1.277741,103.755924,V4,,In transit  to QC2
+73,1.276647,103.757629,V1,,In transit  to QC2
+74,1.276948,103.757179,V2,,In transit  to QC2
+75,1.277312,103.756728,V3,,In transit  to QC2
+76,1.277527,103.756235,V4,,In transit  to QC2
+77,1.276347,103.758252,V1,,In transit  to QC2
+78,1.276647,103.757629,V2,,In transit  to QC2
+79,1.276948,103.757179,V3,,In transit  to QC2
+80,1.277312,103.756728,V4,,In transit  to QC2
+81,1.276047,103.758745,V1,,In transit  to QC2
+82,1.276347,103.758252,V2,,In transit  to QC2
+83,1.276647,103.757629,V3,,In transit  to QC2
+84,1.276948,103.757179,V4,,In transit  to QC2
+85,1.275746,103.759217,V1,,In transit  to QC2
+86,1.276047,103.758745,V2,,In transit  to QC2
+87,1.276347,103.758252,V3,,In transit  to QC2
+88,1.276647,103.757629,V4,,In transit  to QC2
+89,1.275467,103.759754,V1,,In transit  to QC2
+90,1.275746,103.759217,V2,,In transit  to QC2
+91,1.276047,103.758745,V3,,In transit  to QC2
+92,1.276347,103.758252,V4,,In transit  to QC2
+93,1.275146,103.760269,V1,,In transit  to QC2
+94,1.275467,103.759754,V2,,In transit  to QC2
+95,1.275746,103.759217,V3,,In transit  to QC2
+96,1.276047,103.758745,V4,,In transit  to QC2
+97,1.274888,103.760676,V1,,In transit  to QC2
+98,1.275146,103.760269,V2,,In transit  to QC2
+99,1.275467,103.759754,V3,,In transit  to QC2
+100,1.275746,103.759217,V4,,In transit  to QC2
+101,1.274524,103.76132,V1,,In transit  to QC2
+102,1.274888,103.760676,V2,,In transit  to QC2
+103,1.275146,103.760269,V3,,In transit  to QC2
+104,1.275467,103.759754,V4,,In transit  to QC2
+105,1.274845,103.76147,V1,,In transit  to QC2
+106,1.274524,103.76132,V2,,In transit  to QC2
+107,1.274888,103.760676,V3,,In transit  to QC2
+108,1.275146,103.760269,V4,,In transit  to QC2
+109,1.275124,103.761685,V1,,In transit  to QC2
+110,1.274845,103.76147,V2,,In transit  to QC2
+111,1.274524,103.76132,V3,,In transit  to QC2
+112,1.274888,103.760676,V4,,In transit  back to original
+113,1.275575,103.761878,V1,,In transit  back to original
+114,1.275124,103.761685,V2,,In transit  back to original
+115,1.274845,103.76147,V3,,In transit  back to original
+116,1.274524,103.76132,V4,,In transit  back to original
+117,1.275982,103.762114,V1,,In transit  back to original
+118,1.275575,103.761878,V2,,In transit  back to original
+119,1.275124,103.761685,V3,,In transit  back to original
+120,1.274845,103.76147,V4,,In transit  back to original
+121,1.276326,103.762436,V1,,In transit  back to original
+122,1.275982,103.762114,V2,,In transit  back to original
+123,1.275575,103.761878,V3,,In transit  back to original
+124,1.275124,103.761685,V4,,In transit  back to original
+125,1.276604,103.762629,V1,,In transit  back to original
+126,1.276326,103.762436,V2,,In transit  back to original
+127,1.275982,103.762114,V3,,In transit  back to original
+128,1.275575,103.761878,V4,,In transit  back to original
+129,1.276905,103.762779,V1,,In transit  back to original
+130,1.276604,103.762629,V2,,In transit  back to original
+131,1.276326,103.762436,V3,,In transit  back to original
+132,1.275982,103.762114,V4,,In transit  back to original
+133,1.277184,103.762951,V1,,In transit  back to original
+134,1.276905,103.762779,V2,,In transit  back to original
+135,1.276604,103.762629,V3,,In transit  back to original
+136,1.276326,103.762436,V4,,In transit  back to original
+137,1.277398,103.76308,V1,,In transit  back to original
+138,1.277184,103.762951,V2,,In transit  back to original
+139,1.276905,103.762779,V3,,In transit  back to original
+140,1.276604,103.762629,V4,,In transit  back to original
+141,1.277767,103.762908,V1,,In transit  back to original
+142,1.277398,103.76308,V2,,In transit  back to original
+143,1.277184,103.762951,V3,,In transit  back to original
+144,1.276905,103.762779,V4,,In transit  back to original
+145,1.277864,103.762715,V1,,In transit  back to original
+146,1.277767,103.762908,V2,,In transit  back to original
+147,1.277398,103.76308,V3,,In transit  back to original
+148,1.277184,103.762951,V4,,In transit  back to original
+149,1.277971,103.762543,V1,,In transit  back to original
+150,1.277864,103.762715,V2,,In transit  back to original
+151,1.277767,103.762908,V3,,In transit  back to original
+152,1.277398,103.76308,V4,,In transit  back to original
+153,1.27811,103.762318,V1,,In transit  back to original
+154,1.277971,103.762543,V2,,In transit  back to original
+155,1.277864,103.762715,V3,,In transit  back to original
+156,1.277767,103.762908,V4,,In transit  back to original
+157,1.278269,103.762058,V1,,In transit  back to original
+158,1.27811,103.762318,V2,,In transit  back to original
+159,1.277971,103.762543,V3,,In transit  back to original
+160,1.277864,103.762715,V4,,In transit  back to original
+161,1.278387,103.761801,V1,,In transit  back to original
+162,1.278269,103.762058,V2,,In transit  back to original
+163,1.27811,103.762318,V3,,In transit  back to original
+164,1.277971,103.762543,V4,,In transit  back to original
+165,1.278505,103.76164,V1,,In transit  back to original
+166,1.278387,103.761801,V2,,In transit  back to original
+167,1.278269,103.762058,V3,,In transit  back to original
+168,1.27811,103.762318,V4,,In transit  back to original
+169,1.278634,103.761457,V1,,In transit  back to original
+170,1.278505,103.76164,V2,,In transit  back to original
+171,1.278387,103.761801,V3,,In transit  back to original
+172,1.278269,103.762058,V4,,In transit  back to original
+173,1.278752,103.761254,V1,,In transit  back to original
+174,1.278634,103.761457,V2,,In transit  back to original
+175,1.278505,103.76164,V3,,In transit  back to original
+176,1.278387,103.761801,V4,,In transit  back to original
+177,1.278891,103.761093,V1,,In transit  back to original
+178,1.278752,103.761254,V2,,In transit  back to original
+179,1.278634,103.761457,V3,,In transit  back to original
+180,1.278505,103.76164,V4,,In transit  back to original
+181,1.278998,103.760878,V1,,In transit  back to original
+182,1.278891,103.761093,V2,,In transit  back to original
+183,1.278752,103.761254,V3,,In transit  back to original
+184,1.278634,103.761457,V4,,In transit  back to original
+185,1.279106,103.760642,V1,,In transit  back to original
+186,1.278998,103.760878,V2,,In transit  back to original
+187,1.278891,103.761093,V3,,In transit  back to original
+188,1.278752,103.761254,V4,,In transit  back to original
+189,1.279267,103.760406,V1,,In transit  back to original
+190,1.279106,103.760642,V2,,In transit  back to original
+191,1.278998,103.760878,V3,,In transit  back to original
+192,1.278891,103.761093,V4,,In transit  back to original
+193,1.279428,103.760127,V1,,In transit  back to original
+194,1.279267,103.760406,V2,,In transit  back to original
+195,1.279106,103.760642,V3,,In transit  back to original
+196,1.278998,103.760878,V4,,In transit  back to original
+197,1.279556,103.759945,V1,,In transit  back to original
+198,1.279428,103.760127,V2,,In transit  back to original
+199,1.279267,103.760406,V3,,In transit  back to original
+200,1.279106,103.760642,V4,,In transit  back to original
+201,1.279685,103.75973,V1,,In transit  back to original
+202,1.279556,103.759945,V2,,In transit  back to original
+203,1.279428,103.760127,V3,,In transit  back to original
+204,1.279267,103.760406,V4,,In transit  back to original
+205,1.279835,103.759516,V1,,In transit  back to original
+206,1.279685,103.75973,V2,,In transit  back to original
+207,1.279556,103.759945,V3,,In transit  back to original
+208,1.279428,103.760127,V4,,In transit  back to original
+209,1.279964,103.759322,V1,,In transit  back to original
+210,1.279835,103.759516,V2,,In transit  back to original
+211,1.279685,103.75973,V3,,In transit  back to original
+212,1.279556,103.759945,V4,,In transit  back to original
+213,1.28006,103.759076,V1,,In transit  back to original
+214,1.279964,103.759322,V2,,In transit  back to original
+215,1.279835,103.759516,V3,,In transit  back to original
+216,1.279685,103.75973,V4,,In transit  back to original
+217,1.280178,103.758904,V1,,In transit  back to original
+218,1.28006,103.759076,V2,,In transit  back to original
+219,1.279964,103.759322,V3,,In transit  back to original
+220,1.279835,103.759516,V4,,In transit  back to original
+221,1.280286,103.7587,V1,,In transit  back to original
+222,1.280178,103.758904,V2,,In transit  back to original
+223,1.28006,103.759076,V3,,In transit  back to original
+224,1.279964,103.759322,V4,,In transit  back to original
+225,1.280404,103.758539,V1,,In transit  back to original
+226,1.280286,103.7587,V2,,In transit  back to original
+227,1.280178,103.758904,V3,,In transit  back to original
+228,1.28006,103.759076,V4,,In transit  back to original
+229,1.280522,103.758314,V1,,In transit  back to original
+230,1.280404,103.758539,V2,,In transit  back to original
+231,1.280286,103.7587,V3,,In transit  back to original
+232,1.280178,103.758904,V4,,In transit  back to original
+233,1.280629,103.758196,V1,,In transit  back to original
+234,1.280522,103.758314,V2,,In transit  back to original
+235,1.280404,103.758539,V3,,In transit  back to original
+236,1.280286,103.7587,V4,,In transit  back to original
+237,1.280766,103.758026,V1,,In transit  back to original
+238,1.280629,103.758196,V2,,In transit  back to original
+239,1.280522,103.758314,V3,,In transit  back to original
+240,1.280404,103.758539,V4,,In transit  back to original
+241,1.280916,103.757726,V1,,In transit  back to original
+242,1.280766,103.758026,V2,,In transit  back to original
+243,1.280629,103.758196,V3,,In transit  back to original
+244,1.280522,103.758314,V4,,In transit  back to original
+245,1.281077,103.757426,V1,,In transit  back to original
+246,1.280916,103.757726,V2,,In transit  back to original
+247,1.280766,103.758026,V3,,In transit  back to original
+248,1.280629,103.758196,V4,,In transit  back to original
+249,1.281131,103.757211,V1,,In transit  back to original
+250,1.281077,103.757426,V2,,In transit  back to original
+251,1.280916,103.757726,V3,,In transit  back to original
+252,1.280766,103.758026,V4,,In transit  back to original
+253,1.281281,103.757018,V1,,In transit  back to original
+254,1.281131,103.757211,V2,,In transit  back to original
+255,1.281077,103.757426,V3,,In transit  back to original
+256,1.280916,103.757726,V4,,In transit  back to original
+258,1.281281,103.757018,V2,,In transit  back to original
+259,1.281131,103.757211,V3,,In transit  back to original
+260,1.281077,103.757426,V4,,In transit  back to original
+263,1.281281,103.757018,V3,,In transit  back to original
+264,1.281131,103.757211,V4,,In transit  back to original
+268,1.281281,103.757018,V4,stop,In transit  back to original

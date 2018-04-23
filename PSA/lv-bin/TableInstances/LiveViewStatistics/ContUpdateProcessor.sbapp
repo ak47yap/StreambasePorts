@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.3.6">
+    <add generator="gui">
+        <import from="CQInterfaces.sbint" postfix="" prefix=""/>
+        <import from="QueryFilter.sbint" postfix="" prefix=""/>
+        <import from="QueryServerCommonSchema.sbapp" postfix="" prefix=""/>
+        <parameter-definitions>
+            <parameter default="'dev'" name="Tablename"/>
+            <parameter default="false" name="UseContainerConnections"/>
+            <parameter default="if (indexof(getParallelRoot(),&quot;:&quot;) == -1 ) then 0 else int(substr(getParallelRoot(), lastindexof(getParallelRoot(),&quot;:&quot;)+1))" name="ThisShardNumber"/>
+            <parameter default="bool(systemproperty('liveview.query.keep.identical', &quot;true&quot; ))" name="KEEP_IDENTICAL"/>
+        </parameter-definitions>
+        <schema name="schema:SnapIn">
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+                <parent-schema name="TableDataOnlySchema"/>
+                <parent-schema name="QueryParentSchema"/>
+            </parent-schemas>
+            <field description="" name="_ShardNumber" type="int"/>
+        </schema>
+        <data name="DetainedDataIDs" type="querytable">
+            <param name="gui:x" value="-194.0"/>
+            <param name="gui:y" value="-214.0"/>
+            <param name="gui:width" value="190.0"/>
+            <param name="gui:height" value="67.0"/>
+            <primary-index type="btree">
+                <field name="CQSInternalID"/>
+                <field name="CQSQueryID"/>
+                <field name="CQSConnectionID"/>
+            </primary-index>
+            <index type="btree">
+                <field name="_IsActive"/>
+                <field name="_TimeUp"/>
+            </index>
+            <param name="storage-method" value="memory"/>
+            <param name="schema" value="DelayDataStatus"/>
+            <param name="replicated" value="false"/>
+            <param name="shared-table" value="none"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="Order2" type="querytable">
+            <param name="gui:x" value="-104.0"/>
+            <param name="gui:y" value="-306.0"/>
+            <param name="gui:width" value="100.0"/>
+            <param name="gui:height" value="66.0"/>
+            <primary-index type="btree">
+                <field name="CQSInternalID"/>
+            </primary-index>
+            <index type="btree">
+                <field name="CQSShardSequenceNumber"/>
+            </index>
+            <index type="btree">
+                <field name="OrderID"/>
+            </index>
+            <index type="btree">
+                <field name="_LastEvalTime"/>
+            </index>
+            <param name="storage-method" value="memory"/>
+            <param name="schema" value="TableSchema"/>
+            <param name="replicated" value="false"/>
+            <param name="shared-table" value="input"/>
+            <param name="table-schema" value="Orders"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="out:DataReeval_1" schema="ContUpdateDataFeedbackSchema"/>
+        <stream name="DataIn" schema="ContUpdateDataInputSchema">
+            <param name="gui:x" value="-351.0"/>
+            <param name="gui:y" value="232.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="DetainedDataFromSnapshot" schema="RawTableSchemaOut">
+            <param name="gui:x" value="-346.0"/>
+            <param name="gui:y" value="-26.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <box name="Metronome" type="metronome">
+            <output port="1" stream="out:Metronome_1"/>
+            <param name="interval" value=".1"/>
+            <param name="timestamp-field" value="time"/>
+            <param name="gui:x" value="-347.0"/>
+            <param name="gui:y" value="-421.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <stream name="OneSecondSignalIn" schema="TimerSignalSchema">
+            <param name="gui:x" value="-347.0"/>
+            <param name="gui:y" value="-231.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="QueryInsertIn" schema="QueryLookupSchema">
+            <param name="gui:x" value="-347.0"/>
+            <param name="gui:y" value="143.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="TimeIn" schema="TimeSchema">
+            <param name="gui:x" value="-346.0"/>
+            <param name="gui:y" value="66.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <box name="SearchExpiredData" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:Metronome_1"/>
+            <output port="1" stream="out:SearchExpiredData_1"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="key-field.0" value="_IsActive"/>
+            <param name="key-lowerbound-value.0" value="true"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="_TimeUp"/>
+            <param name="key-lowerbound-operation.1" value="begin"/>
+            <param name="key-upperbound-value.1" value="to_milliseconds(now())"/>
+            <param name="key-upperbound-operation.1" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="-247.0"/>
+            <param name="gui:y" value="-421.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="QueryInsertIn"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <output port="3" stream="out:Split_3"/>
+            <param name="output-count" value="3"/>
+            <param name="gui:x" value="-236.0"/>
+            <param name="gui:y" value="143.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="LoadDataInfo" type="query">
+            <dataref id="querytable" name="Order2"/>
+            <input port="1" stream="out:SearchExpiredData_1"/>
+            <output port="1" stream="out:LoadDataInfo_1"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="CQSConnectionID"/>
+                    <include field="CQSQueryID"/>
+                    <include field="_Direction"/>
+                    <include field="_MaxRecordsLimit"/>
+                    <include field="_OrderBy"/>
+                    <include field="_Published"/>
+                </item>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="-147.0"/>
+            <param name="gui:y" value="-421.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Unregister" type="filter">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:Unregister_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="_Command==QUERY_COMMAND_UNREGISTER"/>
+            <param name="gui:x" value="-276.0"/>
+            <param name="gui:y" value="-118.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="EventDrivenPublishing" type="filter">
+            <input port="1" stream="out:LoadDataInfo_1"/>
+            <output port="1" stream="out:EventDrivenPublishing_1"/>
+            <output port="2" stream="out:EventDrivenPublishing_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="true"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="-24.0"/>
+            <param name="gui:y" value="-420.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="RemoveRecordsForUnregisteredQuery" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:Unregister_1"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="begin"/>
+            <param name="key-upperbound-operation.0" value="end"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-lowerbound-value.1" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-lowerbound-value.2" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:x" value="-117.0"/>
+            <param name="gui:y" value="-118.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <module-reference name="CQEngine_FilterAggregate">
+            <param name="file" value="QueryFilterExtensionModule.ssql"/>
+            <input name="DelayEvalDataExtIn" port="1" stream="out:EventDrivenPublishing_2"/>
+            <input name="TimeExtIn" port="2" stream="TimeIn"/>
+            <input name="QueryInsertExtIn" port="3" stream="out:Split_2"/>
+            <input name="DataExtIn" port="4" stream="DataIn"/>
+            <input name="DataFeedbackExtIn" port="5" stream="out:DataReeval_1"/>
+            <output name="DelayEvalDataExtOut" port="1" stream="out:CQEngine_FilterAggregate_1"/>
+            <output name="FilteredDataExtOut" port="2" stream="out:CQEngine_FilterAggregate_2"/>
+            <output name="FilteredDataForAggExtOut" port="3" stream="FilteredDataForAggOut"/>
+            <output name="QueryInsertExtOut" port="4" stream="QueryInsertOut"/>
+            <output name="QueryTimeWindowUpdateExtOut" port="5" stream="QueryTimeWindowUpdateOut"/>
+            <output name="ChangeFilterExtOut" port="6" stream="out:CQEngine_FilterAggregate_6"/>
+            <param name="gui:x" value="0.0"/>
+            <param name="gui:y" value="74.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="356,356,354;133,933;508,507;130,87"/>
+            <param name="gui:bends:4" value="-121.0,263.0;-86.0,109.0"/>
+        </module-reference>
+        <output-stream name="FilteredDataForAggOut" schema="DataAndQuery">
+            <param name="gui:bends" value="288.0,101.0;288.0,100.0"/>
+            <param name="gui:x" value="566.0"/>
+            <param name="gui:y" value="69.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+        <box name="ImmediateOrDetained" type="filter">
+            <input port="1" stream="out:CQEngine_FilterAggregate_2"/>
+            <output port="1" stream="out:ImmidiateOrDetained_1"/>
+            <output port="2" stream="out:ImmidiateOrDetained_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="(isnull(_DelayedMilliSeconds))||&#13;&#10;(notnull(_DelayedMilliSeconds)&amp;&amp;notnull(_ArrivalTime)&amp;&amp;to_milliseconds(now())&gt;=_ArrivalTime+_DelayedMilliSeconds)"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:bends:1" value="111.0,90.0;165.0,-131.0"/>
+            <param name="gui:x" value="192.0"/>
+            <param name="gui:y" value="-162.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="63.0"/>
+        </box>
+<box name="KeepIdentical" type="filter">
+    <input port="1" stream="out:ImmidiateOrDetained_1"/>
+    <output port="1" stream="out:KeepIdentical_1"/>
+    <param name="autogen-nomatch-port" value="false"/>
+    <param name="expression.0" value="${KEEP_IDENTICAL} || CQSScopeTransition==SCOPE_TRANSITION_LEAVE || (notnull(RecordCount) || notnull(InboundTuplesPerSec) || notnull(TotalQueuedTuples) || notnull(MBMemoryUsed) || notnull(TotalTuplesPublished))"/>
+    <param name="gui:x" value="269"/>
+    <param name="gui:y" value="-265"/>
+</box>
+        <output-stream name="QueryInsertOut" schema="QueryLookupSchema">
+            <param name="gui:bends" value="272.0,109.0;292.0,190.0"/>
+            <param name="gui:x" value="566.0"/>
+            <param name="gui:y" value="159.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+        <output-stream name="QueryTimeWindowUpdateOut">
+            <param name="gui:bends" value="262.0,114.0;302.0,278.0"/>
+            <param name="gui:x" value="566.0"/>
+            <param name="gui:y" value="247.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+        <box name="RevalLog" type="outputadapter">
+            <input port="1" stream="out:CQEngine_FilterAggregate_6"/>
+            <output port="1" stream="out:RevalLog_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="logLevel" value="Trace"/>
+            <param name="messageIdentifier" value="LVTraceContinous"/>
+            <param name="messagePrefix" value="{ ${Tablename}::Re-eval}"/>
+            <param name="verbose" value="true"/>
+            <param name="gui:x" value="-99.0"/>
+            <param name="gui:y" value="343.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union4" type="union">
+            <input port="1" stream="out:EventDrivenPublishing_1"/>
+            <input port="2" stream="out:CQEngine_FilterAggregate_1"/>
+            <output port="1" stream="out:Union4_1"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="123.0"/>
+            <param name="gui:y" value="-420.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="ClearOrRegister" type="filter">
+            <input port="1" stream="out:ImmidiateOrDetained_2"/>
+            <output port="1" stream="out:ClearOrRegister_1"/>
+            <output port="2" stream="out:ClearOrRegister_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="SCOPE_TRANSITION_ENTER!=CQSScopeTransition"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:bends:1" value="298.0,-120.0;306.0,-56.0"/>
+            <param name="gui:x" value="311.0"/>
+            <param name="gui:y" value="-87.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="212,1060"/>
+        </box>
+        <box name="DataReeval" type="map">
+            <input port="1" stream="out:RevalLog_1"/>
+            <output port="1" stream="out:DataReeval_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <replace field="CQSSequenceNumber">long(-1)</replace>
+                </item>
+            </target-list>
+            <param name="gui:x" value="83.0"/>
+            <param name="gui:y" value="343.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:Union4_1"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
+            <param name="gui:bends:1" value="199.0,-389.0;199.0,-390.0"/>
+            <param name="gui:x" value="237.0"/>
+            <param name="gui:y" value="-421.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="AddExtraFields" type="map">
+            <input port="1" stream="out:Split2_2"/>
+            <output port="1" stream="out:AddExtraFields_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="_ArrivalTime"/>
+                    <remove field="_DueTime"/>
+                    <remove field="PublisherID"/>
+                    <remove field="CQSReferredCount"/>
+                    <remove field="PublisherSN"/>
+                    <remove field="CQSShardSequenceNumber"/>
+                    <remove field="_LastEvalTime"/>
+                    <remove field="_Published"/>
+                </item>
+                <expressions>
+                    <include field="CQSMessageType">RESULT_MESSAGE_TYPE_DATA</include>
+                    <include field="CQSMatchNumber">0</include>
+                    <include field="CQSScopeTransition">if(_Published) then SCOPE_TRANSITION_REMAININ else SCOPE_TRANSITION_ENTER</include>
+                    <include field="CQSElapsedTime">double()</include>
+                    <include field="CQSServerID">''</include>
+                    <include field="_ShardNumber">int(null)</include>
+                </expressions>
+            </target-list>
+            <param name="gui:bends:1" value="327.0,-380.0;337.0,-333.0"/>
+            <param name="gui:x" value="376.0"/>
+            <param name="gui:y" value="-364.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Query" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:ClearOrRegister_1"/>
+            <output port="1" stream="out:Query_1"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-lowerbound-value.1" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-lowerbound-value.2" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="RecordExist">notnull(current.CQSInternalID)</include>
+                    <include field="_Published">coalesce(current._Published, false)</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:bends:1" value="405.0,-66.0;415.0,-109.0"/>
+            <param name="gui:x" value="440.0"/>
+            <param name="gui:y" value="-140.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="130,87"/>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:ClearOrRegister_2"/>
+            <input port="2" stream="DetainedDataFromSnapshot"/>
+            <output port="1" stream="out:Union2_1"/>
+            <param name="strict" value="false"/>
+            <param name="gui:bends:1" value="394.0,-46.0;400.0,-15.0"/>
+            <param name="gui:x" value="445.0"/>
+            <param name="gui:y" value="-36.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="UpdatePublishFlag" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:Split2_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input1.CQSInternalID"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-value.1" value="input1.CQSQueryID"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-value.2" value="input1.CQSConnectionID"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="_Published">true</set>
+                    <set field="_IsActive">false</set>
+                    <set field="_TimeUp">old._TimeUp</set>
+                    <set field="_OrderBy">old._OrderBy</set>
+                    <set field="_Direction">old._Direction</set>
+                    <set field="_MaxRecordsLimit">old._MaxRecordsLimit</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:bends:1" value="339.0,-400.0;351.0,-451.0"/>
+            <param name="gui:x" value="376.0"/>
+            <param name="gui:y" value="-482.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="IsRemainIn" type="filter">
+            <input port="1" stream="out:Query_1"/>
+            <output port="1" stream="out:IsRemainIn_1"/>
+            <output port="2" stream="out:IsRemainIn_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="SCOPE_TRANSITION_REMAININ=CQSScopeTransition"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="551.0"/>
+            <param name="gui:y" value="-140.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="212,1060"/>
+        </box>
+        <box name="Register" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:Union2_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input1.CQSInternalID"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-value.1" value="input1.CQSQueryID"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-value.2" value="input1.CQSConnectionID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="update"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="old" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="_TimeUp">if(notnull(_ArrivalTime)) then &#13;
+	_ArrivalTime+_DelayedMilliSeconds &#13;
+else &#13;
+	to_milliseconds(now())+_DelayedMilliSeconds</set>
+                    <set field="_OrderBy">input._OrderBy</set>
+                    <set field="_Direction">input._Direction</set>
+                    <set field="_MaxRecordsLimit">input._MaxRecordsLimit</set>
+                    <set field="_Published">false</set>
+                    <set field="_IsActive">true</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="_TimeUp">if(notnull(_ArrivalTime)) then&#13;
+	if(old._IsActive) then&#13;
+		old._TimeUp&#13;
+	else&#13;
+		_ArrivalTime+_DelayedMilliSeconds &#13;
+else &#13;
+	if(old._IsActive) then&#13;
+		old._TimeUp&#13;
+	else&#13;
+		to_milliseconds(now())+_DelayedMilliSeconds</set>
+                    <set field="_OrderBy">input._OrderBy</set>
+                    <set field="_Direction">input._Direction</set>
+                    <set field="_MaxRecordsLimit">input._MaxRecordsLimit</set>
+                    <set field="_Published">old._Published</set>
+                    <set field="_IsActive">true</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="551.0"/>
+            <param name="gui:y" value="-36.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="130,87"/>
+        </box>
+        <box name="HasPublished" type="filter">
+            <input port="1" stream="out:IsRemainIn_1"/>
+            <output port="1" stream="out:HasPublished_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="_Published"/>
+            <param name="gui:bends:1" value="673.0,-119.0;673.0,-117.0"/>
+            <param name="gui:x" value="707.0"/>
+            <param name="gui:y" value="-148.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="212,1060"/>
+        </box>
+        <box name="PublishedBefore" type="filter">
+            <input port="1" stream="out:IsRemainIn_2"/>
+            <output port="1" stream="out:PublishedBefore_1"/>
+            <output port="2" stream="out:PublishedBefore_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="!input1.RecordExist"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:bends:1" value="651.0,-99.0;669.0,-20.0"/>
+            <param name="gui:x" value="710.0"/>
+            <param name="gui:y" value="-51.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Clear" type="query">
+            <dataref id="querytable" name="DetainedDataIDs"/>
+            <input port="1" stream="out:PublishedBefore_2"/>
+            <output port="1" stream="out:Clear_1"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input1.CQSInternalID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-field.1" value="CQSQueryID"/>
+            <param name="key-value.1" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-value.1" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-field.2" value="CQSConnectionID"/>
+            <param name="key-value.2" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-value.2" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="_IsActive">false</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="_IsActive">false</set>
+                    <set field="_Published">old._Published</set>
+                    <set field="_TimeUp">old._TimeUp</set>
+                    <set field="_OrderBy">old._OrderBy</set>
+                    <set field="_Direction">old._Direction</set>
+                    <set field="_MaxRecordsLimit">old._MaxRecordsLimit</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="DelayDataStatus" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:bends:1" value="808.0,-10.0;815.0,52.0"/>
+            <param name="gui:x" value="819.0"/>
+            <param name="gui:y" value="21.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Filter" type="filter">
+            <input port="1" stream="out:Clear_1"/>
+            <output port="1" stream="out:Filter_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="_Published"/>
+            <param name="gui:x" value="896.0"/>
+            <param name="gui:y" value="21.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union5" type="union">
+            <input port="1" stream="out:HasPublished_1"/>
+            <input port="2" stream="out:PublishedBefore_1"/>
+            <input port="3" stream="out:Filter_1"/>
+            <output port="1" stream="out:Union5_1"/>
+            <param name="strict" value="false"/>
+            <param name="gui:bends:1" value="894.0,-117.0;912.0,-40.0"/>
+            <param name="gui:bends:3" value="968.0,52.0;981.0,-20.0"/>
+            <param name="gui:x" value="991.0"/>
+            <param name="gui:y" value="-61.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="PurgeSchema02" type="map">
+            <input port="1" stream="out:Union5_1"/>
+            <output port="1" stream="out:PurgeSchema02_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="RecordExist"/>
+                    <remove field="_Published"/>
+                </item>
+            </target-list>
+            <param name="gui:x" value="1094.0"/>
+            <param name="gui:y" value="-61.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:KeepIdentical_1"/>
+            <input port="2" stream="out:PurgeSchema02_1"/>
+            <output port="1" stream="out:Union3_1"/>
+            <param name="strict" value="false"/>
+    <param name="gui:x" value="391"/>
+    <param name="gui:y" value="-257"/>
+    <param name="gui:height" value="64"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:AddExtraFields_1"/>
+            <input port="2" stream="out:Union3_1"/>
+            <output port="1" stream="QueryFilterOut"/>
+            <param name="strict" value="false"/>
+            <param name="gui:bends:1" value="468.0,-333.0;470.0,-318.0"/>
+            <param name="gui:bends:2" value="473.0,-226.0;491.0,-298.0"/>
+            <param name="gui:x" value="506.0"/>
+            <param name="gui:y" value="-339.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <output-stream name="QueryFilterOut" schema="QueryContTopN">
+          <param name="gui:x" value="652"/>
+          <param name="gui:y" value="-338"/>
+        </output-stream>
+    </add>
+</modify>

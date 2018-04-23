@@ -1,0 +1,6 @@
+{
+	"name": "com.ge.icons",
+	"module": {
+		"core" : ["com.ge.icons.js"]
+	}
+}

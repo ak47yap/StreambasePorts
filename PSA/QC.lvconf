@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ASCII"?>
+<liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
+  <data-table id="QC">
+    <fields>
+      <field name="QC_ID" type="string"/>
+      <field name="Container_Number" type="string"/>
+      <field name="Status" type="string"/>
+    </fields>
+    <primary-key>
+      <field ref="QC_ID"/>
+    </primary-key>
+    <data-sources>
+      <data-source>
+        <application application-ref="QCSim" output-stream="LDM_QC"/>
+      </data-source>
+    </data-sources>
+  </data-table>
+</liveview-configuration>

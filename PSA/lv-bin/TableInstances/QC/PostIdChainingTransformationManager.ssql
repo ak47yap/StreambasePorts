@@ -1,0 +1,12 @@
+IMPORT * FROM "QueryServerCommonSchema.sbapp" ;
+IMPORT * FROM "CQInterfaces.sbint" ;
+
+CREATE INPUT STREAM DataIn EnrichedDataSchema;
+CREATE INPUT STREAM QueryIn QuerySchema;
+
+
+CREATE OUTPUT STREAM DataOut ;
+
+
+SELECT * FROM DataIn INTO DataOut ;
+

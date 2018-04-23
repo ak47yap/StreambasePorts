@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.3.4bacay_181140">
+    <add generator="gui">
+        <import from="CQInterfaces.sbint" postfix="" prefix=""/>
+        <import from="QueryServerCommonSchema.sbapp" postfix="" prefix=""/>
+        <parameter-definitions>
+            <parameter default="'dev'" name="Tablename"/>
+            <parameter default="int(systemproperty('liveview.validate.cachesize' , '1000'))" name="EVAL_CACHE_SIZE"/>
+            <parameter default="bool(systemproperty('liveview.validate.predicates' , 'true'))" name="VALIDATE_PREDICATES"/>
+            <parameter default="bool(systemproperty('liveview.validate.expressions' , 'true'))" name="VALIDATE_EXPRESSIONS"/>
+        </parameter-definitions>
+        <schema name="schema:ResendQueryForDynamicAgg">
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="CQSConnectionID" type="string"/>
+        </schema>
+        <schema name="schema:TableInitializationIn">
+            <field description="" name="Tablename" type="string"/>
+            <field description="" name="TableType" type="string"/>
+            <field description="" name="IndicesList" type="list">
+                <element-type type="tuple" value="TableIndicesDefinationSchema"/>
+            </field>
+            <field description="" name="SchemaDefinationList" type="list">
+                <element-type type="tuple" value="SchemaDefination"/>
+            </field>
+        </schema>
+<data name="ActiveQueries" shared="false" source="input" type="querytable">
+    <param name="storage-method" value="memory"/>
+    <param name="replicated" value="false"/>
+    <param name="table-schema" value="ActiveQueriesTableSchema"/>
+    <param name="truncate" value="false"/>
+    <preload format="csv" mode="empty"/>
+    <param name="gui:x" value="1029"/>
+    <param name="gui:y" value="152"/>
+    <param name="gui:width" value="166"/>
+    <param name="gui:height" value="65"/>
+</data>
+        <stream name="QuerySchemaIn" schema="QuerySchema">
+            <param name="gui:x" value="-50.0"/>
+            <param name="gui:y" value="20.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="ResendQueryForDynamicAgg" schema="schema:ResendQueryForDynamicAgg" scope="public">
+            <param name="gui:x" value="-50.0"/>
+            <param name="gui:y" value="-176.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="TableInitializationIn" schema="schema:TableInitializationIn">
+            <param name="gui:x" value="34.0"/>
+            <param name="gui:y" value="506.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <box name="AddMoreFields" type="map">
+            <input port="1" stream="QuerySchemaIn"/>
+            <output port="1" stream="out:AddMoreFields_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+						<include field="_IsAggQuery">bool(false)</include>	<include field="_AggExpressions">AggregateSchema()</include>	<include field="veh">bool(false)</include>	<include field="veh_Value">string()</include>
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="84.0"/>
+            <param name="gui:y" value="20.0"/>
+            <param name="gui:width" value="63.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="LoadOriginalQuery" type="query">
+            <dataref id="querytable" name="ActiveQueries"/>
+            <input port="1" stream="ResendQueryForDynamicAgg"/>
+            <output port="1" stream="out:LoadOriginalQuery_1"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSQueryID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="CQSConnectionID"/>
+            <param name="key-lowerbound-value.1" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="current" selection="all">
+                    <remove field="GroupBy"/>
+                    <replace field="_Command">int(1)</replace>
+                    <replace field="_SnapshotType">DYNAMIC_AGG_RESCAN</replace>
+                </item>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:x" value="989.0"/>
+            <param name="gui:y" value="-176.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="IsUnreg" type="filter">
+            <input port="1" stream="out:AddMoreFields_1"/>
+            <output port="1" stream="out:IsUnreg_1"/>
+            <output port="2" stream="out:IsUnreg_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="QUERY_COMMAND_UNREGISTER==input1._Command"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="255.0"/>
+            <param name="gui:y" value="20.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="DeleteStoredActiveQueries" type="query">
+            <dataref id="querytable" name="ActiveQueries"/>
+            <input port="1" stream="out:IsUnreg_1"/>
+            <output port="1" stream="out:DeleteStoredActiveQueries_1"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSQueryID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSQueryID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="CQSConnectionID"/>
+            <param name="key-lowerbound-value.1" value="input1.CQSConnectionID"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:x" value="558.0"/>
+            <param name="gui:y" value="10.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="QueryPredicateTranslate" type="java">
+            <input port="1" stream="out:IsUnreg_2"/>
+            <input port="2" stream="TableInitializationIn"/>
+            <output port="1" stream="out:QueryPredicateTranslate_1"/>
+            <error stream="out:QueryPredicateTranslate_2_error"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.liveview.engine.operator.ExtractIndicesOperator"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="gui:x" value="243.0"/>
+            <param name="gui:y" value="487.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="RemoveExtraFields01" type="map">
+            <input port="1" stream="out:DeleteStoredActiveQueries_1"/>
+            <output port="1" stream="out:RemoveExtraFields01_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="_AggExpr"/>
+                    <remove field="_GroupBy"/>
+                    <remove field="_PredicateExpr"/>
+                </item>
+            </target-list>
+            <param name="gui:x" value="882.0"/>
+            <param name="gui:y" value="10.0"/>
+            <param name="gui:width" value="63.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+<box name="IsTimedWindow" type="map">
+    <input port="1" stream="out:QueryPredicateTranslate_1"/>
+    <output port="1" stream="out:IsTimedWindow_1"/>
+    <target-list>
+        <item name="input" selection="all"/>
+        <expressions>
+            <include field="_IsTimeWindowedQuery">notnull(_TimestampField)&amp;&amp;notnull(_WindowStartTimeExpr)&amp;&amp;notnull(_WindowEndTimeExpr)</include>
+        </expressions>
+    </target-list>
+    <param name="gui:x" value="348"/>
+    <param name="gui:y" value="433"/>
+</box>
+        <box name="ReplaceNowFunction" type="map">
+            <input port="1" stream="out:IsTimedWindow_1"/>
+            <output port="1" stream="out:ReplaceNowFunction_1"/>
+            <error stream="out:ReplaceNowFunction_2_error"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <replace field="_WindowStartTimeExpr">if (_IsTimeWindowedQuery) then _rewrite_expr_replace(_rewrite_expr_replace(_rewrite_expr_replace(_rewrite_expr_replace(_WindowStartTimeExpr, 'now()', '_NOW'), 'NOW', '_NOW'), 'today_utc()', 'today() + timezoneoffset()'), 'today()', '_TODAY')&#13;
+else&#13;
+string(null)</replace>
+                    <replace field="_WindowEndTimeExpr">if (_IsTimeWindowedQuery) then _rewrite_expr_replace(_rewrite_expr_replace(_rewrite_expr_replace(_rewrite_expr_replace(_WindowEndTimeExpr, 'now()', 'NOW'), 'NOW', '_NOW'), 'today_utc()', 'today() + timezoneoffset()'), 'today()', '_TODAY')&#13;
+else&#13;
+string()</replace>
+                </item>
+            </target-list>
+    <param name="gui:x" value="462"/>
+    <param name="gui:y" value="428"/>
+        </box>
+        <box name="AddNOWForCheckingTimeExpr" type="map">
+            <input port="1" stream="out:ReplaceNowFunction_1"/>
+            <output port="1" stream="out:AddNOWForCheckingTimeExpr_1"/>
+            <error stream="out:AddNOWForCheckingTimeExpr_2_error"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="DataSample">tuple(now() As _NOW, today() AS _TODAY, long() AS CQSInternalID, string() As ContainerNumber, string() As veh, double() As Lat, double() As Long, long() As id, double() As Lat1, double() As Long1, double() As Lat2, double() As Long2, string() As Status)</include>
+                    <include field="WindowBoundaryCompare">format('({0}) &lt;= ({1})', _WindowStartTimeExpr, _WindowEndTimeExpr)</include>
+                    <include field="TimeWindowExpr">format('{0} between {1} and {2}',input1._TimestampField ,_WindowStartTimeExpr, _WindowEndTimeExpr)</include>
+                </expressions>
+            </target-list>
+    <param name="gui:x" value="583.0"/>
+    <param name="gui:y" value="424.0"/>
+    <param name="gui:width" value="62.0"/>
+    <param name="gui:height" value="62.0"/>
+        </box>
+<box name="ValidatePred" type="map">
+    <input port="1" stream="out:AddNOWForCheckingTimeExpr_1"/>
+    <output port="1" stream="out:ValidatePred_1"/>
+    <error stream="out:ValidatePred_2_error"/>
+    <target-list>
+        <item name="input" selection="all"/>
+        <expressions>
+            <include field="NOOP">if (${VALIDATE_EXPRESSIONS}) then eval(_PredicateExpr, DataSample, bool(), ${EVAL_CACHE_SIZE}) else true</include>
+        </expressions>
+    </target-list>
+    <param name="gui:x" value="730.0"/>
+    <param name="gui:y" value="414.0"/>
+    <param name="gui:width" value="62.0"/>
+    <param name="gui:height" value="62.0"/>
+</box>
+        <box name="CheckSyntaxForWindowExpr" type="map">
+            <input port="1" stream="out:ValidatePred_1"/>
+            <output port="1" stream="out:CheckSyntaxForWindowExpr_1"/>
+            <error stream="out:CheckSyntaxForWindowExpr_2_error"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                  <include field="DontCare">if (${VALIDATE_PREDICATES} &amp;&amp; _IsTimeWindowedQuery) then eval(TimeWindowExpr, DataSample, bool(), ${EVAL_CACHE_SIZE}) else true</include>                  
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="883.0"/>
+            <param name="gui:y" value="414.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="PopulateStartAndEndTime" type="map">
+            <input port="1" stream="out:CheckSyntaxForWindowExpr_1"/>
+            <output port="1" stream="out:PopulateStartAndEndTime_1"/>
+            <error stream="out:PopulateStartAndEndTime_2_error"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="WindowBoundaryCompare"/>
+                </item>
+                <expressions>
+                    <include field="IsOrdered">coalesce(!_IsTimeWindowedQuery || eval(WindowBoundaryCompare, DataSample, bool(), ${EVAL_CACHE_SIZE}), true)</include>
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="1061.0"/>
+            <param name="gui:y" value="396.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="CheckTimeWindowOrder" type="filter">
+            <input port="1" stream="out:PopulateStartAndEndTime_1"/>
+            <output port="1" stream="out:CheckTimeWindowOrder_1"/>
+            <output port="2" stream="out:CheckTimeWindowOrder_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="IsOrdered"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="1225.0"/>
+            <param name="gui:y" value="378.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="AdjustErr01" type="map">
+            <input port="1" stream="out:CheckTimeWindowOrder_2"/>
+            <output port="1" stream="out:AdjustErr01_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="_Command"/>
+                    <include field="CQSQueryID"/>
+                    <include field="CQSConnectionID"/>
+                </item>
+                <expressions>
+                    <include field="CQSInternalID">long()</include>
+                    <include field="CQSServerID">string('QueryServer')</include>
+                    <include field="CQSMessageType">string('SyntaxError window start time should be earlier than window end time.')</include>
+                    <include field="CQSMatchNumber">int()</include>
+                    <include field="CQSScopeTransition">int()</include>
+                    <include field="CQSSequenceNumber">long()</include>
+                    <include field="CQSErrorCode">int(601)</include>
+<include field="ContainerNumber">string()</include>
+<include field="veh">string()</include>
+<include field="Lat">double()</include>
+<include field="Long">double()</include>
+<include field="id">long()</include>
+<include field="Lat1">double()</include>
+<include field="Long1">double()</include>
+<include field="Lat2">double()</include>
+<include field="Long2">double()</include>
+<include field="Status">string()</include>
+
+                    <include field="CQSElapsedTime">double()</include>
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="1272.0"/>
+            <param name="gui:y" value="495.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="RemoveExtra" type="map">
+            <input port="1" stream="out:CheckTimeWindowOrder_1"/>
+            <output port="1" stream="out:RemoveExtra_1"/>
+            <error stream="out:RemoveExtra_2_error"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="IsOrdered"/>
+                    <remove field="DataSample"/>
+                    <remove field="DontCare"/>
+                    <remove field="NOOP"/>
+                    <remove field="TimeWindowExpr"/>
+                    <remove field="_PredicateExpr"/>
+                </item>
+                <expressions>
+                    <include field="_Predicates">if(_IsTimeWindowedQuery) then&#13;
+ if(''!=_PredicateExpr&amp;&amp;'true'!=_PredicateExpr) then&#13;
+  PredicateCollection(&#13;
+  _PredicateExpr AS Original, &#13;
+  format('({0})&amp;&amp;({1} between query__WindowStartTime and query__WindowEndTime)', _PredicateExpr, _TimestampField) AS UpdateFilterNew,&#13;
+  format('({0})&amp;&amp;({1} between {2} and {3})', _PredicateExpr, _TimestampField, _WindowStartTimeExpr, _WindowEndTimeExpr) AS UpdateFilterOld, &#13;
+  format('!({0})&amp;&amp;({1} between QueryLookup._WindowStartTime and QueryLookup._WindowEndTime)', _PredicateExpr, _TimestampField) AS FeedbackFilterNew, &#13;
+  format('({0})&amp;&amp;({1} between {2} and {3})', _PredicateExpr, _TimestampField, _WindowStartTimeExpr, _WindowEndTimeExpr) AS FeedbackFilterOld, &#13;
+  format('({0})&amp;&amp;({1} between {2} and {3})', _PredicateExpr, _TimestampField, _WindowStartTimeExpr, _WindowEndTimeExpr) AS DeleteFilter)&#13;
+ else&#13;
+  PredicateCollection(&#13;
+  _PredicateExpr AS Original, &#13;
+  format('{1} between query__WindowStartTime and query__WindowEndTime', _PredicateExpr, _TimestampField) AS UpdateFilterNew,&#13;
+  format('{1} between {2} and {3}', _PredicateExpr, _TimestampField, _WindowStartTimeExpr, _WindowEndTimeExpr) AS UpdateFilterOld, &#13;
+  'bool()' AS FeedbackFilterNew, &#13;
+  'bool()' AS FeedbackFilterOld, &#13;
+  format('{1} between {2} and {3}', _PredicateExpr, _TimestampField, _WindowStartTimeExpr, _WindowEndTimeExpr) AS DeleteFilter)&#13;
+else&#13;
+ if(''!=_PredicateExpr&amp;&amp;'true'!=_PredicateExpr) then&#13;
+  PredicateCollection(&#13;
+  _PredicateExpr AS Original, &#13;
+  format('{0}', _PredicateExpr) AS UpdateFilterNew,&#13;
+  format('{0}', _PredicateExpr) AS UpdateFilterOld, &#13;
+  format('!({0})', _PredicateExpr) AS FeedbackFilterNew, &#13;
+  format('{0}', _PredicateExpr) AS FeedbackFilterOld, &#13;
+  format('{0}', _PredicateExpr) AS DeleteFilter)&#13;
+ else&#13;
+  PredicateCollection(&#13;
+  _PredicateExpr AS Original, &#13;
+  'true' AS UpdateFilterNew,&#13;
+  'true' AS UpdateFilterOld, &#13;
+  'bool()' AS FeedbackFilterNew, &#13;
+  'bool()' AS FeedbackFilterOld, &#13;
+  'true' AS DeleteFilter)</include>
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="1379.0"/>
+            <param name="gui:y" value="357.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="ShouldRegister" type="filter">
+            <input port="1" stream="out:RemoveExtra_1"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <output port="2" stream="out:Filter2_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="(_Command==4||_Command==3) || _IsAggQuery"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="1559.0"/>
+            <param name="gui:y" value="344.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:PopulateStartAndEndTime_2_error"/>
+            <input port="2" stream="out:QueryPredicateTranslate_2_error"/>
+            <input port="3" stream="out:CheckSyntaxForWindowExpr_2_error"/>
+            <input port="4" stream="out:ReplaceNowFunction_2_error"/>
+            <input port="5" stream="out:AddNOWForCheckingTimeExpr_2_error"/>
+            <input port="6" stream="out:RemoveExtra_2_error"/>
+            <input port="7" stream="out:ValidatePred_2_error"/>
+            <output port="1" stream="out:Union2_1"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="1057.0"/>
+            <param name="gui:y" value="635.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="AdjustErr02" type="map">
+            <input port="1" stream="out:Union2_1"/>
+            <output port="1" stream="out:AdjustErr02_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="action"/>
+                    <remove field="description"/>
+                    <remove field="inputPort"/>
+                    <remove field="nodeName"/>
+                    <remove field="operatorName"/>
+                    <remove field="originalTuple"/>
+                    <remove field="type"/>
+                    <remove field="time"/>
+                </item>
+                <expressions>
+                    <include field="_Command">jsonExtractInt("_Command", originalTuple)</include>
+                    <include field="CQSInternalID">long()</include>
+                    <include field="CQSServerID">string('QueryServer')</include>
+                    <include field="CQSQueryID">jsonExtractString("CQSQueryID", originalTuple)</include>
+                    <include field="CQSConnectionID">jsonExtractString("CQSConnectionID", originalTuple)</include>
+                    <include field="CQSMessageType">string('SyntaxError ') + description</include>
+                    <include field="CQSMatchNumber">int()</include>
+                    <include field="CQSScopeTransition">int()</include>
+                    <include field="CQSSequenceNumber">long()</include>
+                    <include field="CQSErrorCode">int(601)</include>
+<include field="ContainerNumber">string()</include>
+<include field="veh">string()</include>
+<include field="Lat">double()</include>
+<include field="Long">double()</include>
+<include field="id">long()</include>
+<include field="Lat1">double()</include>
+<include field="Long1">double()</include>
+<include field="Lat2">double()</include>
+<include field="Long2">double()</include>
+<include field="Status">string()</include>
+
+                    <include field="CQSElapsedTime">double()</include>
+                </expressions>
+            </target-list>
+            <param name="gui:x" value="1178.0"/>
+            <param name="gui:y" value="635.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="RemoveExtraFields02" type="map">
+            <input port="1" stream="out:Filter2_2"/>
+            <output port="1" stream="out:RemoveExtraFields02_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="_AggExpr"/>
+                </item>
+            </target-list>
+            <param name="gui:x" value="1665.0"/>
+            <param name="gui:y" value="168.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="StoreActiveContUpdateQueries" type="query">
+            <dataref id="querytable" name="ActiveQueries"/>
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="out:StoreActiveContUpdateQueries_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSQueryID"/>
+            <param name="key-value.0" value="input1.CQSQueryID"/>
+            <param name="key-field.1" value="CQSConnectionID"/>
+            <param name="key-value.1" value="input1.CQSConnectionID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:ActiveQueriesTableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:x" value="1461.0"/>
+            <param name="gui:y" value="168.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:LoadOriginalQuery_1"/>
+            <input port="2" stream="out:RemoveExtraFields01_1"/>
+            <input port="3" stream="out:RemoveExtraFields02_1"/>
+            <input port="4" stream="out:StoreActiveContUpdateQueries_1"/>
+            <output port="1" stream="QueryLookupSchemaOut"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="1543.0"/>
+            <param name="gui:y" value="20.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="63.0"/>
+        </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:AdjustErr01_1"/>
+            <input port="2" stream="out:AdjustErr02_1"/>
+            <output port="1" stream="ErrorPredicateOut"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="1309.0"/>
+            <param name="gui:y" value="621.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <output-stream name="ErrorPredicateOut">
+            <param name="gui:x" value="1482.0"/>
+            <param name="gui:y" value="621.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+        <output-stream name="QueryLookupSchemaOut" schema="QueryLookupSchema">
+            <param name="gui:x" value="1882.0"/>
+            <param name="gui:y" value="20.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+    </add>
+</modify>

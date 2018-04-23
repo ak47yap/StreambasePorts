@@ -1,0 +1,31 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+TableName: QC
+TableType: Data
+PublishType: Realtime
+PrimaryKey: QC_ID
+Fields: 
+  - !java.util.LinkedHashMap
+    field: QC_ID string
+  - !java.util.LinkedHashMap
+    field: Container_Number string
+  - !java.util.LinkedHashMap
+    field: Status string
+FieldUpdateRules: 
+  - 
+    - !java.util.LinkedHashMap
+      Test: true
+      Assignments: []
+Indices: 
+  - !java.util.LinkedHashMap
+    index: QC_ID
+Configuration: !java.util.LinkedHashMap
+  BuildOnServerStart: off
+  BuildSbarOnServerStart: off
+  LoadOnServerStart: on
+  LoadFromSbar: on
+  NumberOfThreads: 1
+  NumberOfConcurrentSnaps: 0
+  MinCacheSizeForEval: 1000
+  MaxCacheSizeForEval: 1000
+  RestoreDataOnStart: off

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.4.ish">
+   <add>
+        <annotations>
+            <annotation name="hygienic"/>
+        </annotations>
+        <import from="CQInterfaces.sbint"/>
+        <import from="QueryServerCommonSchema.sbapp"/>
+        <parameter-definitions>
+            <parameter default="1" name="SHARDS"/>
+            <parameter default="1" name="ThisShardNumber"/>
+        </parameter-definitions>
+        <data name="MainTable" shared="false" source="input" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <param name="table-schema" value="Orders"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+            <param name="gui:x" value="-358"/>
+            <param name="gui:y" value="101"/>
+            <param name="gui:width" value="126"/>
+            <param name="gui:height" value="63"/>
+        </data>
+        <stream name="DataIn" schema="InternalEnrichedDataSchema">
+            <param name="gui:x" value="-435"/>
+            <param name="gui:y" value="-28"/>
+        </stream>
+        <box name="CheckInternalID" type="query">
+            <input port="1" stream="DataIn"/>
+            <output port="1" stream="out:CheckInternalID_1"/>
+            <dataref id="querytable" name="MainTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+	<param name="key-field.0" value="QC_ID"/>	<param name="key-lowerbound-value.0" value="input1.QC_ID"/>	<param name="key-lowerbound-operation.0" value="eq"/>	<param name="key-upperbound-operation.0" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="CQSInternalID"/>
+                </item>
+                <item name="current" selection="none">
+                    <include field="CQSInternalID"/>
+                </item>
+                <item name="old" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+            <param name="gui:x" value="-325"/>
+            <param name="gui:y" value="-28"/>
+        </box>
+        <box name="UpdateOrInsert" type="filter">
+            <input port="1" stream="out:CheckInternalID_1"/>
+            <output port="1" stream="out:UpdateOrInsert_1"/>
+            <output port="2" stream="out:UpdateOrInsert_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="notnull(CQSInternalID)"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="-232"/>
+            <param name="gui:y" value="-28"/>
+        </box>
+        <box name="GetSeq" type="seqnum">
+            <input port="1" stream="out:UpdateOrInsert_2"/>
+            <output port="1" stream="out:Sequence_1"/>
+            <param name="output-field" value="BaseID"/>
+            <param name="sequence-id" value="CurrentSequenceNumber"/>
+            <param name="update-expression" value="CurrentSequenceNumber + 1"/>
+            <param name="gui:x" value="-117"/>
+            <param name="gui:y" value="14"/>
+            <param name="gui:bends:1" value="-159,12;-151,44"/>
+        </box>
+        <stream name="HighestID" schema="TheLastGoodRecordResponseSchema">
+            <param name="gui:x" value="-176"/>
+            <param name="gui:y" value="215"/>
+        </stream>
+      <box name="InitSeq" type="seqnum">
+            <input port="1" stream="HighestID"/>
+            <output port="1" stream="out:InitSeq_1"/>
+            <param name="output-field" value="NOOP"/>
+            <param name="sequence-id" value="CurrentSequenceNumber"/>
+            <param name="update-expression" value="if (isnull(CQSInternalID)) then CurrentSequenceNumber else &#13;&#10;&#9;if (CQSInternalID%${SHARDS} == 0) then long(CQSInternalID/${SHARDS})&#13;&#10;&#9;&#9;else long(CQSInternalID/${SHARDS})+1"/>
+            <param name="gui:x" value="-58"/>
+            <param name="gui:y" value="215"/>
+        </box>
+        <box name="GetANewID" type="map">
+            <input port="1" stream="out:Sequence_1"/>
+            <output port="1" stream="out:GetANewID_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <replace field="CQSInternalID">long(${SHARDS})*(BaseID-1)+_ShardID+1</replace>
+                    <remove field="BaseID"/>
+                </item>
+            </target-list>
+            <param name="gui:x" value="-37"/>
+            <param name="gui:y" value="14"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:UpdateOrInsert_1"/>
+            <input port="2" stream="out:GetANewID_1"/>
+            <output port="1" stream="DataOut"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="68"/>
+            <param name="gui:y" value="-28"/>
+            <param name="gui:bends:2" value="30,44;34,12"/>
+        </box>
+        <output-stream name="DataOut">
+            <param name="gui:x" value="148"/>
+            <param name="gui:y" value="-28"/>
+        </output-stream>
+    </add>
+</modify>

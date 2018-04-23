@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbfs:Simulation xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:sbfs="http://www.streambase.com/schemas/feedsim/02/SBFS">
+  <SimStreams Name="IN">
+    <ProcessingOptions DataRatePerSecond="4.0" DataGenerationMethod="DataFile">
+      <DataSource Name="DataSource" DataSourceURI="arrangedcoord.csv" QuoteChar="34" SkipLineCount="1"/>
+    </ProcessingOptions>
+    <Schema ColumnMappingMethod="ORDINAL">
+      <Fields Name="veh" DataTypeName="string" Description="">
+        <DataSourceMapping DestFieldNum="4" DestFieldName=""/>
+      </Fields>
+      <Fields Name="Lat" DataTypeName="double" Description="">
+        <DataSourceMapping DestFieldNum="2" DestFieldName=""/>
+      </Fields>
+      <Fields Name="Long" DataTypeName="double" Description="">
+        <DataSourceMapping DestFieldNum="3" DestFieldName=""/>
+      </Fields>
+      <Fields Name="Status" DataTypeName="string" Description="">
+        <DataSourceMapping DestFieldNum="6" DestFieldName=""/>
+      </Fields>
+      <Fields Name="StreamStatus" DataTypeName="string" Description="">
+        <DataSourceMapping DestFieldNum="5" DestFieldName=""/>
+      </Fields>
+    </Schema>
+  </SimStreams>
+</sbfs:Simulation>

@@ -1,0 +1,19 @@
+
+
+CREATE OUTPUT STREAM OutputStream;
+
+CREATE  STREAM LDM_QC_Temp;
+CREATE OUTPUT STREAM LDM_QC WITH PARAMETERS (connection = "'QC.DataIn'");
+
+
+
+
+
+
+
+APPLY MODULE "QCSim.sbapp" AS WorkingProcessor 
+
+INTO OutputStream = OutputStream,LDM_QC = LDM_QC_Temp;
+
+SELECT string() AS PublisherID, long() AS PublisherSN, string() AS CQSDataUpdatePredicate, bool() AS CQSDelete, int() AS CQSReferredCount, LDM_QC_Temp.QC_ID AS QC_ID, LDM_QC_Temp.Container_Number AS Container_Number, LDM_QC_Temp.Status AS Status FROM LDM_QC_Temp INTO LDM_QC;
+

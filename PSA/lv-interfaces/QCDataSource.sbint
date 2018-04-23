@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application version="dev">
+    <gui.metadata>
+        <property name="description" value="This is a generated file, do not edit. It defines the interface to which data sources for the QC LiveView table must conform."/>
+    </gui.metadata>
+    <annotations>
+        <annotation name="hygienic"/>
+    </annotations>
+    <import alias="QCDataInSchema" from="QCSchemas.sbint" item="QCDataInSchema"/>
+    <output-stream description="" name="DataOut" schema="QCDataInSchema"/>
+</application>

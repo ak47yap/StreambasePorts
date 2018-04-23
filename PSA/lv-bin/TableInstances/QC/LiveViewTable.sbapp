@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.3.4bacay_181140">
+    <add generator="gui">
+        <import from="CQInterfaces.sbint" postfix="" prefix=""/>
+        <import from="QueryServerCommonSchema.sbapp" postfix="" prefix=""/>
+        <dynamic-variables>
+            <dynamic-variable initial-expression="false" name="IsReadyForPersistence" setter-expression="IsReady" setter-stream="ServerStatus"/>
+        </dynamic-variables>
+        <schema name="schema:DataIn">
+            <parent-schemas>
+                <parent-schema name="EnrichedDataSchema"/>
+            </parent-schemas>
+            <field description="" name="CQSShardSequenceNumber" type="long"/>
+        </schema>
+        <schema name="schema:Initialize">
+            <field description="" name="time" type="timestamp"/>
+            <field description="" name="lock" type="bool"/>
+        </schema>
+        <data name="MainTable" type="querytable">
+            <param name="gui:x" value="841.0"/>
+            <param name="gui:y" value="-39.0"/>
+            <param name="gui:width" value="110.0"/>
+            <param name="gui:height" value="74.0"/>
+            <param name="storage-method" value="memory"/>
+            <param name="schema" value="TableSchema"/>
+            <param name="replicated" value="false"/>
+            <param name="shared-table" value="output"/>
+            <param name="table-schema" value="Orders"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="DataIn" schema="schema:DataIn">
+            <param name="gui:x" value="-100.0"/>
+            <param name="gui:y" value="82.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="FromRecover" schema="TableSchema">
+            <param name="gui:x" value="629.0"/>
+            <param name="gui:y" value="-216.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="Initialize" schema="schema:Initialize">
+    <param name="gui:x" value="110"/>
+    <param name="gui:y" value="-265"/>
+        </stream>
+        <stream name="OneSecondSignalIn" schema="TimerSignalSchema">
+            <param name="gui:x" value="-96.0"/>
+            <param name="gui:y" value="-141.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <stream name="ServerStatus" schema="ServerStatusSchema" scope="public">
+            <param name="gui:x" value="-96.0"/>
+            <param name="gui:y" value="-266.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </stream>
+        <box name="IsABatchQuery" type="filter">
+            <input port="1" stream="DataIn"/>
+            <output port="1" stream="out:IsABatchQuery_1"/>
+            <output port="2" stream="out:IsABatchQuery_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="notnull(input1.CQSDataUpdatePredicate)&amp;&amp;''!=input1.CQSDataUpdatePredicate"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="8.0"/>
+            <param name="gui:y" value="82.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="RecoveryInsertOnly" type="query">
+            <dataref id="querytable" name="MainTable"/>
+            <input port="1" stream="FromRecover"/>
+            <output port="1" stream="out:RecoveryInsertOnly_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input.CQSInternalID"/>
+
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="new" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="FromMainTable">true</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema_logical_value" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSSequenceNumber">input.CQSSequenceNumber</set>
+                    <set field="CQSShardSequenceNumber">input.CQSShardSequenceNumber</set>
+                    <set field="PublisherID">input.PublisherID</set>
+                    <set field="PublisherSN">input.PublisherSN</set>
+                    <set field="CQSReferredCount">input.CQSReferredCount</set>
+                    <set field="CQSErrorCode">input.CQSErrorCode</set>
+                    <set field="_LastEvalTime">timestamp("1000-01-01 01:00:00.000-0500")</set>
+                    <set field="_RefreshTimeWindowedQuery">false</set>
+                    <set field="_DueTime">input._DueTime</set>
+                    <set field="_ArrivalTime">input._ArrivalTime</set>
+                    <set field="QC_ID">input.QC_ID</set>
+                    <set field="Container_Number">input.Container_Number</set>
+                    <set field="Status">input.Status</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="832.0"/>
+            <param name="gui:y" value="-217.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="reportRate" type="filter">
+            <input port="1" stream="OneSecondSignalIn"/>
+            <output port="1" stream="out:reportRate_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="0==SecondCount%STATISTICS_PUBLISH_RATE"/>
+            <param name="gui:x" value="39.0"/>
+            <param name="gui:y" value="-141.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="GetTableSize" type="java">
+            <input port="1" stream="out:reportRate_1"/>
+            <output port="1" stream="out:GetTableSize_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.liveview.engine.operator.GetTableSize"/>
+            <param name="SizeFieldName" value="RecordCount"/>
+            <param name="TableName" value="MainTable"/>
+            <param name="gui:x" value="164.0"/>
+            <param name="gui:y" value="-141.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <module-reference name="QueryForBatchProcess">
+            <param name="file" value="QueryForBatchProcess.sbapp"/>
+            <input name="DataIn" port="1" stream="out:IsABatchQuery_1"/>
+            <output name="DataOut" port="1" stream="out:QueryForBatchProcess_1"/>
+            <input-dataref name="MainTable" table="MainTable"/>
+            <param name="gui:x" value="96.0"/>
+            <param name="gui:y" value="-8.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+            <param name="gui:columnwidths" value="673,673,673;152,1067;468,468;133,88"/>
+        </module-reference>
+        <box name="DropField" type="map">
+            <input port="1" stream="out:GetTableSize_1"/>
+            <output port="1" stream="ToTableStatistics"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="SecondCount"/>
+                </item>
+            </target-list>
+            <param name="gui:x" value="277.0"/>
+            <param name="gui:y" value="-141.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:QueryForBatchProcess_1"/>
+            <input port="2" stream="out:IsABatchQuery_2"/>
+            <output port="1" stream="out:Union3_1"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="182.0"/>
+            <param name="gui:y" value="82.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <output-stream name="ToTableStatistics" scope="public">
+            <param name="gui:x" value="404.0"/>
+            <param name="gui:y" value="-141.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+        <box name="IsDeletion" type="filter">
+    <input port="1" stream="out:Union3_1"/>
+            <output port="1" stream="out:IsDeletion_1"/>
+            <output port="2" stream="out:IsDeletion_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="isnull(CQSSequenceNumber)"/>
+            <param name="expression.1" value="true"/>
+            <param name="gui:x" value="386.0"/>
+            <param name="gui:y" value="63.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <module-reference name="TableUpdateRulesRef1">
+            <param name="file" value="TableUpdateRules.ssql"/>
+            <input name="DataIn" port="1" stream="out:IsDeletion_2"/>
+            <output name="DataOut" port="1" stream="out:TableUpdateRulesRef1_1"/>
+            <input-dataref name="QueryTable" table="MainTable"/>
+            <param name="gui:x" value="487.0"/>
+            <param name="gui:y" value="83.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </module-reference>
+        <box name="Delete" type="query">
+            <dataref id="querytable" name="MainTable"/>
+    <input port="1" stream="out:IsDeletion_1"/>
+            <output port="1" stream="out:Delete_1"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-lowerbound-value.0" value="input1.CQSInternalID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="Old">old</include>
+                    <include field="FromMainTable">true</include>
+					<include field="_RefreshTimeWindowedQuery">false</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="update">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="634.0"/>
+            <param name="gui:y" value="-13.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="UpdToMainTable" type="query">
+            <dataref id="querytable" name="MainTable"/>
+            <input port="1" stream="out:TableUpdateRulesRef1_1"/>
+            <output port="1" stream="out:UpdToMainTable_1"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="CQSInternalID"/>
+            <param name="key-value.0" value="input.CQSInternalID"/>
+
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="Old">old</include>
+                    <include field="FromMainTable">true</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema_logical_value" name="insert">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSSequenceNumber">input.CQSSequenceNumber</set>
+                    <set field="CQSShardSequenceNumber">input.CQSShardSequenceNumber</set>
+                    <set field="PublisherID">input.PublisherID</set>
+                    <set field="PublisherSN">input.PublisherSN</set>
+                    <set field="CQSReferredCount">input.CQSReferredCount</set>
+                    <set field="CQSErrorCode">input.CQSErrorCode</set>
+                    <set field="_LastEvalTime">timestamp("1000-01-01 01:00:00.000-0500")</set>
+                    <set field="_RefreshTimeWindowedQuery">false</set>
+                    <set field="_DueTime">long()</set>
+                    <set field="_ArrivalTime">long()</set>
+                    <set field="QC_ID">input.QC_ID</set>
+                    <set field="Container_Number">input.Container_Number</set>
+                    <set field="Status">input.Status</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="CQSSequenceNumber">coalesce(input.CQSSequenceNumber, old.CQSSequenceNumber)</set>
+                    <set field="CQSShardSequenceNumber">coalesce(input.CQSShardSequenceNumber, old.CQSShardSequenceNumber)</set>
+                    <set field="PublisherID">coalesce(input.PublisherID, old.PublisherID)</set>
+                    <set field="PublisherSN">coalesce(input.PublisherSN, old.PublisherSN)</set>
+                    <set field="CQSErrorCode">if(notnull(old.CQSErrorCode)&amp;&amp;0!=old.CQSErrorCode) then old.CQSErrorCode else input.CQSErrorCode</set>
+                    <set field="_RefreshTimeWindowedQuery">false</set>
+                    <set field="CQSReferredCount">coalesce(input.CQSReferredCount,old.CQSReferredCount)</set>
+                    <set field="_DueTime">long()</set>
+                    <set field="_ArrivalTime">long()</set>
+                    <set field="_LastEvalTime">coalesce(old._LastEvalTime, timestamp("1000-01-01 01:00:00.000-0500"))</set>
+                    <set field="QC_ID">coalesce(input.QC_ID, old.QC_ID)</set>
+                    <set field="Container_Number">coalesce(input.Container_Number, old.Container_Number)</set>
+                    <set field="Status">coalesce(input.Status, old.Status)</set>
+
+                </expressions>
+            </target-list>
+            <target-list goal-schema="TableSchema" name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+            <param name="gui:x" value="634.0"/>
+            <param name="gui:y" value="82.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:RecoveryInsertOnly_1"/>
+            <input port="2" stream="out:Delete_1"/>
+            <input port="3" stream="out:UpdToMainTable_1"/>
+            <output port="1" stream="DataOut"/>
+            <param name="strict" value="false"/>
+            <param name="gui:x" value="1136.0"/>
+            <param name="gui:y" value="22.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="65.0"/>
+        </box>
+        <output-stream name="DataOut">
+            <param name="gui:x" value="1282.0"/>
+            <param name="gui:y" value="24.0"/>
+            <param name="gui:width" value="62.0"/>
+            <param name="gui:height" value="62.0"/>
+        </output-stream>
+    </add>
+</modify>

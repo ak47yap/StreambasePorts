@@ -1,0 +1,29 @@
+
+
+CREATE OUTPUT STREAM OutputStream8;
+
+CREATE  STREAM LDM_Latency_Temp;
+CREATE OUTPUT STREAM LDM_Latency WITH PARAMETERS (connection = "'Latency.DataIn'");
+
+CREATE OUTPUT STREAM OutputStream7;
+
+CREATE OUTPUT STREAM OutputStream6;
+
+CREATE OUTPUT STREAM OutputStream5;
+
+CREATE  STREAM LDM_AGVUpdate_Temp;
+CREATE OUTPUT STREAM LDM_AGVUpdate WITH PARAMETERS (connection = "'dtable.DataIn'");
+
+
+
+
+
+
+
+APPLY MODULE "Test.sbapp" AS WorkingProcessor 
+
+INTO OutputStream8 = OutputStream8,LDM_Latency = LDM_Latency_Temp,OutputStream7 = OutputStream7,OutputStream6 = OutputStream6,OutputStream5 = OutputStream5,LDM_AGVUpdate = LDM_AGVUpdate_Temp;
+
+SELECT string() AS PublisherID, long() AS PublisherSN, string() AS CQSDataUpdatePredicate, bool() AS CQSDelete, int() AS CQSReferredCount, LDM_Latency_Temp.latency_JMS AS latency_JMS, LDM_Latency_Temp.latency_ECS_JMS AS latency_ECS_JMS, LDM_Latency_Temp.record_time AS record_time FROM LDM_Latency_Temp INTO LDM_Latency;
+SELECT string() AS PublisherID, long() AS PublisherSN, string() AS CQSDataUpdatePredicate, bool() AS CQSDelete, int() AS CQSReferredCount, LDM_AGVUpdate_Temp.ContainerNumber AS ContainerNumber, LDM_AGVUpdate_Temp.veh AS veh, LDM_AGVUpdate_Temp.Lat AS Lat, LDM_AGVUpdate_Temp.Long AS Long, long() AS id, double() AS Lat1, double() AS Long1, double() AS Lat2, double() AS Long2, LDM_AGVUpdate_Temp.Status AS Status FROM LDM_AGVUpdate_Temp INTO LDM_AGVUpdate;
+

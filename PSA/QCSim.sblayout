@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="QC">
+        <param name="gui:x" value="-165"/>
+        <param name="gui:y" value="-98"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="DeleteRecord">
+        <param name="gui:x" value="264"/>
+        <param name="gui:y" value="253"/>
+    </component>
+    <component name="Filter">
+        <param name="gui:x" value="-32"/>
+        <param name="gui:y" value="-7"/>
+    </component>
+    <component name="InsertRecord">
+        <param name="gui:x" value="-155"/>
+        <param name="gui:y" value="-216"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="257"/>
+        <param name="gui:y" value="42"/>
+    </component>
+    <component name="Metronome">
+        <param name="gui:x" value="-304"/>
+        <param name="gui:y" value="-8"/>
+    </component>
+    <component name="QCDischarageCompleted">
+        <param name="gui:x" value="264"/>
+        <param name="gui:y" value="149"/>
+    </component>
+    <component name="QCDischargeIn">
+        <param name="gui:x" value="-299"/>
+        <param name="gui:y" value="-217"/>
+    </component>
+    <component name="Query">
+        <param name="gui:x" value="-159"/>
+        <param name="gui:y" value="-7"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="112"/>
+        <param name="gui:y" value="80"/>
+    </component>
+    <component name="Union">
+        <param name="gui:x" value="390"/>
+        <param name="gui:y" value="-43"/>
+    </component>
+    <component name="UpdateCount">
+        <param name="gui:x" value="112"/>
+        <param name="gui:y" value="-52"/>
+    </component>
+    <component name="LDM_QC">
+        <param name="gui:x" value="507"/>
+        <param name="gui:y" value="-43"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="-32"/>
+        <param name="gui:y" value="139"/>
+    </component>
+</application-layout>

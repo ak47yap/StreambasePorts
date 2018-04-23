@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application version="7.1.2ruges_138493">
+        <import from="QueryServerCommonSchema.sbapp"/>
+    <named-schemas>
+
+
+        <schema name="AggregatedDataSchema">
+            <field description="" name="Name" type="string"/>
+            <field description="" name="Value" type="double"/>
+        </schema>
+
+        <schema name="AggregateStatesSnapshotSchema">
+            <parent-schemas>
+                <parent-schema name="AggregateStatesSchema"/>
+            </parent-schemas>
+            <field description="" name="_MaxCQSShardSequenceNumber" type="long"/>
+        </schema>
+
+        <schema name="TimerSignalSchema">
+            <field description="" name="SecondCount" type="int"/>
+        </schema>
+        <schema name="TimeSchema">
+            <field description="" name="_ShardTime" type="timestamp"/>
+            <field description="" name="_ShardDay" type="timestamp"/>
+        </schema>
+        <schema name="EnrichedDataSchema">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+            <field description="" name="CQSInternalID" type="long"/>
+            <field description="" name="CQSSequenceNumber" type="long"/>
+            <field description="" name="CQSDataUpdatePredicate" type="string"/>
+            <field description="" name="CQSDelete" type="bool"/>
+            <field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="CQSErrorCode" type="int"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+            <schema name="InternalEnrichedDataSchema">
+                <parent-schemas>
+                    <parent-schema name="EnrichedDataSchema"/>
+                </parent-schemas>
+            	<field description="" name="_ShardID" type="int"/>
+            </schema>
+            <schema name="TableParentSchema">
+                <field description="" name="CQSInternalID" type="long"/>
+                <field description="" name="CQSSequenceNumber" type="long"/>
+                <field description="" name="CQSShardSequenceNumber" type="long"/>
+                <field description="" name="CQSErrorCode" type="int"/>
+                <field description="" name="_DueTime" type="long"/>
+<!-- Maybe -->
+                <field description="" name="_Time" type="long"/>
+
+                <field description="" name="_ArrivalTime" type="long"/>
+                <field description="" name="_LastEvalTime" type="timestamp"/>
+                <field description="" name="_RefreshTimeWindowedQuery" type="bool"/>
+            </schema>
+            <schema name="TablePublicParentSchema">
+                <field description="" name="CQSInternalID" type="long"/>
+                <field description="" name="CQSSequenceNumber" type="long"/>
+                <field description="" name="CQSErrorCode" type="int"/>
+                <field description="" name="_DueTime" type="long"/>
+                <field description="" name="_Time" type="long"/>
+                <field description="" name="_ArrivalTime" type="long"/>
+                <field description="" name="_RefreshTimeWindowedQuery" type="bool"/>
+            </schema>
+
+            <schema name="QueryTimeWindowParentSchema">
+                <field description="" name="_QueryArrivalTime" type="timestamp"/>
+                <field description="" name="_WindowStartTimeExpr" type="string"/>
+                <field description="" name="_WindowEndTimeExpr" type="string"/>
+                <field description="" name="_WindowStartTime" type="timestamp"/>
+                <field description="" name="_WindowEndTime" type="timestamp"/>
+                <field description="" name="_TimestampField" type="string"/>
+            </schema>
+            <schema name="QueryLookupParentSchema">
+                <field description="" name="_Command" type="int"/>
+                <field description="" name="_IndexName" type="string"/>
+                <field description="" name="_IsAggQuery" type="bool"/>
+                <field description="" name="_AggExpr" type="string"/>
+                <field description="" name="_AggExpressions" type="tuple" value="AggregateSchema"/>
+                <field description="" name="_GroupBy" type="list">
+                    <element-type type="string"/>
+	            </field>
+            </schema>
+            <schema name="SnapshotBeginEndSchema">
+                <parent-schemas>
+                    <parent-schema name="QueryParentSchema"/>
+                </parent-schemas>
+                <field description="" name="_DeltaFields" type="bool"/>
+                <field description="" name="_Command" type="int"/>
+                <field description="" name="_IndexName" type="string"/>
+                <field description="" name="_IsAggQuery" type="bool"/>
+                <field description="" name="_AggExpr" type="string"/>
+                <field description="" name="_GroupBy" type="list">
+                    <element-type type="string"/>
+                </field>
+            </schema>
+
+        <schema name="TableDataOnlySchema">
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+        <schema name="DataNaturalKeySchema">
+			<field description="" name="QC_ID" type="string"/>
+
+        </schema>
+        <schema name="TableSchema">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+            </parent-schemas>
+            <field description="" name="CQSReferredCount" type="long"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+
+        <schema name="SnapDataSchema">
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+                <parent-schema name="QueryParentSchema"/>
+                <parent-schema name="TableDataOnlySchema"/>
+            </parent-schemas>
+            <field description="" name="_DeltaFields" type="bool"/>
+            <field description="" name="_ShardNumber" type="int"/>
+        </schema>
+
+        <schema name="QueryContTopN">
+            <parent-schemas>
+                <parent-schema name="SnapDataSchema"/>
+            </parent-schemas>
+            <field description="" name="_Old" type="tuple" value="TableSchema"/>
+            <field description="" name="_DeltaMask" type="blob"/>
+        </schema>
+
+        <schema name="ContUpdateDataFeedbackSchema">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+            </parent-schemas>
+
+            <field description="" name="CQSSequenceNumber" type="long"/>
+            <field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="MatchedFilter" type="string"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="Old" type="tuple" value="TableSchema"/>
+        </schema>
+        <schema name="ContUpdateDataInputSchema">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+            </parent-schemas>
+
+            <field description="" name="CQSReferredCount" type="long"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="Old" type="tuple" value="TableSchema"/>
+        </schema>        
+        <schema name="DataSchema">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+			<field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="CQSDataUpdatePredicate" type="string"/>
+            <field description="" name="CQSDelete" type="bool"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+        <schema name="RawTableSchemaOut">
+
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+                <parent-schema name="QueryParentSchema"/>
+            </parent-schemas>
+            <field description="" name="_DeltaFields" type="bool"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+
+        </schema>
+        <schema name="RawTableContSchemaOut">
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+                <parent-schema name="QueryParentSchema"/>
+            </parent-schemas>
+            <field description="" name="_DeltaFields" type="bool"/>
+            <field description="" name="_DeltaMask" type="blob"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+
+            <field description="" name="_Old" type="tuple" value="TableSchema"/>
+        </schema>
+        <schema name="TableSchemaOut">
+            <!-- DATA_SCHEMA must be first -->
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="CQSInternalID" type="long"/>
+            <field description="" name="CQSSequenceNumber" type="long"/>
+            <field description="" name="CQSErrorCode" type="int"/>
+            <field description="" name="CQSServerID" type="string"/>
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="CQSMessageType" type="string"/>
+            <field description="" name="CQSMatchNumber" type="int"/>
+            <field description="" name="CQSScopeTransition" type="int"/>
+            <field description="" name="CQSElapsedTime" type="double"/>
+            <field description="" name="_DeltaMask" type="blob"/>
+        </schema>
+        <schema name="PingSchema">
+            <field description="" name="ping" type="long"/>
+        </schema>
+        <schema name="PredicateCollection">
+            <field description="" name="Original" type="string"/>
+            <field description="" name="UpdateFilterNew" type="string"/>
+            <field description="" name="UpdateFilterOld" type="string"/>
+            <field description="" name="FeedbackFilterNew" type="string"/>
+            <field description="" name="FeedbackFilterOld" type="string"/>
+            <field description="" name="DeleteFilter" type="string"/>
+        </schema>
+        <schema name="QueryLookupSchema">
+            <parent-schemas>
+                <parent-schema name="QueryParentSchema"/>
+                <parent-schema name="QueryLookupParentSchema"/>
+                <parent-schema name="QueryTimeWindowParentSchema"/>
+            </parent-schemas>
+            <field description="" name="_DeltaFields" type="bool"/>
+            <field description="" name="_Predicates" type="tuple" value="PredicateCollection"/>
+            <field description="" name="_IsTimeWindowedQuery" type="bool"/>
+			<field description="" name="QC_ID" type="bool"/>
+			<field description="" name="QC_ID_Value" type="string"/>
+
+        </schema>
+        <schema name="DeleteSignalSchema">
+            <field name="CQSInternalID" type="long"/>
+            <field name="DataNaturalKey" type="tuple" value="DataNaturalKeySchema"/>
+        </schema>
+        <schema name="SnapQueryLookupSchema">
+            <parent-schemas>
+                <parent-schema name="QueryLookupSchema"/>
+            </parent-schemas>
+            <field description="" name="_NOW" type="timestamp"/>
+            <field description="" name="_TODAY" type="timestamp"/>
+        </schema>
+
+        <schema name="ActiveQueriesSchema">
+            <parent-schemas>
+                <parent-schema name="QueryLookupSchema"/>
+            </parent-schemas>
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="GroupBy" type="string"/>
+        </schema>
+        <schema name="DataRefeshQuerySchema">
+            <field description="" name="_NOW" type="timestamp"/>
+            <field description="" name="_TODAY" type="timestamp"/>
+            <field description="" name="TimeWindowQueries" type="list">
+                <element-type type="tuple">
+                    <schema>
+                        <field description="" name="CQSQueryID" type="string"/>
+                        <field description="" name="CQSConnectionID" type="string"/>
+                        <field description="" name="_PredicateExpr" type="string"/>
+                        <parent-schemas>
+                            <parent-schema name="QueryTimeWindowParentSchema"/>
+                        </parent-schemas>
+                        <field description="" name="_CurrentWindowStartTime" type="timestamp"/>
+                        <field description="" name="_CurrentWindowEndTime" type="timestamp"/>
+                    </schema>
+                </element-type>
+            </field>
+        </schema>
+        <schema name="UpdateDataQueryOut">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+                <parent-schemas>
+                   <parent-schema name="TableParentSchema"/>
+                </parent-schemas>
+            <field description="" name="CQSReferredCount" type="long"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="Old" type="tuple">
+                <schema>
+                    <field description="" name="PublisherID" type="string"/>
+                    <field description="" name="PublisherSN" type="long"/>
+                    <parent-schemas>
+                       <parent-schema name="TableParentSchema"/>
+                    </parent-schemas>
+                    <field description="" name="CQSReferredCount" type="long"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+                </schema>
+            </field>
+        </schema>
+        <schema name="UpdateDataPublicOut">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+                <parent-schemas>
+                   <parent-schema name="TablePublicParentSchema"/>
+                </parent-schemas>
+            <field description="" name="CQSReferredCount" type="long"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="Old" type="tuple">
+                <schema>
+                    <field description="" name="PublisherID" type="string"/>
+                    <field description="" name="PublisherSN" type="long"/>
+                    <parent-schemas>
+                       <parent-schema name="TablePublicParentSchema"/>
+                    </parent-schemas>
+                    <field description="" name="CQSReferredCount" type="long"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+                </schema>
+            </field>
+        </schema>
+        <schema name="DelayDataStatus">
+            <field description="" name="CQSInternalID" type="long"/>
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="_Published" type="bool"/>
+            <field description="" name="_IsActive" type="bool"/>
+            <field description="" name="_TimeUp" type="long"/>
+            <field description="" name="_OrderBy" type="string"/>
+            <field description="" name="_Direction" type="string"/>
+            <field description="" name="_MaxRecordsLimit" type="int"/>
+        </schema>
+        <schema name="DataAndQuery">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+            </parent-schemas>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="_Command" type="int"/>
+            <field description="" name="CQSScopeTransition" type="int"/>
+			<field description="" name="query_QC_ID" type="bool"/>
+			<field description="" name="query_QC_ID_Value" type="string"/>
+
+            <field description="" name="_PredicateExpr" type="string"/>
+            <field description="" name="_IndexName" type="string"/>
+            <field description="" name="_DelayedMilliSeconds" type="long"/>
+            <field description="" name="_MaxRecordsLimit" type="int"/>
+            <field description="" name="_IsAggQuery" type="bool"/>
+            <field description="" name="_AggExpressions" type="tuple" value="AggregateSchema"/>
+            <field description="" name="_AggExpr" type="string"/>
+            <field description="" name="_GroupBy" type="list">
+               <element-type type="string"/>
+            </field>
+            <field description="" name="_SnapshotType" type="string"/>
+            <field description="" name="_OrderBy" type="string"/>
+            <field description="" name="_Direction" type="string"/>
+            <field description="" name="_DeltaFields" type="bool"/>
+            <field description="" name="Old" type="tuple" value="TableSchema"/>
+        </schema>
+        <schema name="DataAndSnapQuery">
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+
+            <parent-schemas>
+                <parent-schema name="TableParentSchema"/>
+            </parent-schemas>
+
+            <field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="CQSMessageType" type="string"/>
+            <field description="" name="CQSErrorCode" type="int"/>
+            <field description="" name="_CQSQueryID" type="string"/>
+            <field description="" name="_CQSConnectionID" type="string"/>
+            <field description="" name="_Command" type="int"/>
+
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+			<field description="" name="query_QC_ID" type="bool"/>
+			<field description="" name="query_QC_ID_Value" type="string"/>
+
+
+            <parent-schemas>
+                <parent-schema name="PredicateParentSchema"/>
+            </parent-schemas>
+
+            <field description="" name="_IsAggQuery" type="bool"/>
+            <field description="" name="_AggExpressions" type="tuple" value="AggregateSchema"/>
+            <field description="" name="_GroupBy" type="list">
+                <element-type type="string"/>
+	        </field>
+        </schema>
+        
+        <schema name="InitializeNewAggregateSchema">
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="_GroupKey" type="list">
+                <element-type type="string"/>
+            </field>
+            <field description="" name="_AggExpressions" type="tuple" value="AggregateSchema"/>
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+
+            <field description="" name="CQSInternalID" type="long"/>
+            <field description="" name="CQSSequenceNumber" type="long"/>
+            <field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="CQSErrorCode" type="int"/>
+            <field description="" name="_DueTime" type="long"/>
+            <field description="" name="_ArrivalTime" type="long"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+        <schema name="UpdateStateSchema">
+            <field description="" name="CQSConnectionID" type="string"/>
+            <field description="" name="CQSQueryID" type="string"/>
+            <field description="" name="_GroupKey" type="list">
+                <element-type type="string"/>
+            </field>
+            <field description="" name="_AggExpressions" type="tuple" value="AggregateSchema"/>
+            <field description="" name="IsIncr" type="bool"/>
+
+            <field description="" name="PublisherID" type="string"/>
+            <field description="" name="PublisherSN" type="long"/>
+            <field description="" name="CQSInternalID" type="long"/>
+            <field description="" name="CQSSequenceNumber" type="long"/>
+            <field description="" name="CQSReferredCount" type="long"/>
+            <field description="" name="CQSErrorCode" type="int"/>
+            <field description="" name="_DueTime" type="long"/>
+            <field description="" name="_ArrivalTime" type="long"/>
+			<field description="" name="QC_ID" type="string"/>
+			<field description="" name="Container_Number" type="string"/>
+			<field description="" name="Status" type="string"/>
+
+        </schema>
+
+        <schema name="CaseInsensitiveFieldsSchema">
+          
+        </schema>
+
+    </named-schemas>
+    <constant expr="1" name="ORDER2_TABLE_LOCK_ID"/>
+    <constant expr="0" name="SCOPE_TRANSITION_ENTER"/>
+    <constant expr="1" name="SCOPE_TRANSITION_LEAVE"/>
+    <constant expr="2" name="SCOPE_TRANSITION_REMAININ"/>
+    <constant expr="3" name="SCOPE_TRANSITION_REMAINOUT"/>
+    <constant expr="4" name="SCOPE_TRANSITION_SNAPSHOT"/>
+    <constant expr="5" name="SCOPE_TRANSITION_CHANGE_FILTER"/>
+    <constant expr="'DYNAMIC_AGG'" name="DYNAMIC_AGG"/>
+    <constant expr="'DYNAMIC_AGG_RESCAN'" name="DYNAMIC_AGG_RESCAN"/>
+
+    <table-schemas>
+       <table-schema name="Orders" schema="TableSchema">
+            <primary-index type="btree">
+                <field name="CQSInternalID"/>
+            </primary-index>
+			<index type="btree">
+				<field name="CQSShardSequenceNumber"/>
+			</index>
+			<index type="btree">
+				<field name="QC_ID"/>
+			</index>
+
+            <index type="btree">
+                <field name="_LastEvalTime"/>
+            </index>
+        </table-schema>
+        <table-schema name="ActiveQueriesTableSchema" schema="ActiveQueriesSchema">
+            <primary-index type="btree">
+                <field name="CQSQueryID"/>
+                <field name="CQSConnectionID"/>
+            </primary-index>
+        </table-schema>
+    </table-schemas>
+</application>

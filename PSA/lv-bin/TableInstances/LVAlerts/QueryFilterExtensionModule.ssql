@@ -1,0 +1,33 @@
+
+--
+--  This is a generated file from QueryFilterExtensionModule.py
+--
+IMPORT * FROM "CQInterfaces.sbint";
+IMPORT * FROM "QueryFilter.sbint";
+
+CREATE INPUT STREAM TimeExtIn TimeSchema;
+CREATE INPUT STREAM QueryInsertExtIn QueryLookupSchema;
+CREATE INPUT STREAM DelayEvalDataExtIn DelayEvalDataSchema;
+CREATE INPUT STREAM DataExtIn ContUpdateDataInputSchema;
+CREATE INPUT STREAM DataFeedbackExtIn ContUpdateDataFeedbackSchema;
+
+CREATE OUTPUT STREAM QueryInsertExtOut QueryLookupSchema;
+CREATE OUTPUT STREAM QueryTimeWindowUpdateExtOut DataRefeshQuerySchema;
+CREATE OUTPUT STREAM FilteredDataExtOut RawTableContSchemaOut;
+CREATE OUTPUT STREAM DelayEvalDataExtOut DelayEvalDataSchema;
+CREATE OUTPUT STREAM FilteredDataForAggExtOut DataAndQuery;
+CREATE OUTPUT STREAM ChangeFilterExtOut ContUpdateDataFeedbackSchema;
+
+APPLY  USING INTERFACE MODULE "QueryFilter.sbint" AS QueryFilter
+    INSTANCES "QueryFilterModule_AlertKeyAlertRuleIDSourceInternalID.ssql" as "inst_AlertKeyAlertRuleIDSourceInternalID","QueryFilterModule_Tablescan.ssql" as "inst_Tablescan"
+    FROM QueryInsertIn = QueryInsertExtIn USING broadcast, 
+    	 DelayEvalDataIn = DelayEvalDataExtIn USING broadcast, 
+         DataIn = DataExtIn USING broadcast,
+         DataFeedbackIn = DataFeedbackExtIn USING broadcast,
+         TimeIn = TimeExtIn USING broadcast
+    INTO QueryInsertOut = QueryInsertExtOut,
+         QueryTimeWindowUpdateOut = QueryTimeWindowUpdateExtOut,
+         DelayEvalDataOut = DelayEvalDataExtOut,
+         FilteredDataOut = FilteredDataExtOut,
+         ChangeFilterOut = ChangeFilterExtOut,
+         FilteredDataForAggOut = FilteredDataForAggExtOut;

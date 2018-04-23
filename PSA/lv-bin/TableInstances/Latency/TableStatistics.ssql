@@ -1,0 +1,49 @@
+CREATE PARAMETERS (Tablename DEFAULT "'dev'");
+-- WARN: All references to module parameters (e.g. ${Tablename}) have been replaced with the parameter's default value
+
+IMPORT * FROM "QueryServerCommonSchema.sbapp";
+
+CREATE PUBLIC INPUT STREAM OneSecondTimer ( SecondCount int );
+CREATE PUBLIC OUTPUT STREAM TableStatistics ;
+
+CREATE MEMORY TABLE QueryTable ( ShardID string, RecordCount long ) PRIMARY KEY (ShardID) USING BTREE;
+
+DECLARE sequenceid long DEFAULT 0L;
+
+CREATE STREAM out__Filter_1 ;
+SELECT * FROM OneSecondTimer
+WHERE 0==SecondCount%STATISTICS_PUBLISH_RATE INTO out__Filter_1
+;
+ -- seqIdSetter
+CREATE STREAM gen__seqIdSetter ( PublisherSN long );
+CREATE STREAM out__Sequence_1 ;
+SELECT sequenceid + 1 AS PublisherSN FROM out__Filter_1 INTO gen__seqIdSetter;
+SELECT *, sequenceid AS PublisherSN FROM out__Filter_1 INTO out__Sequence_1;
+
+CREATE PUBLIC INPUT STREAM RecordCount_0 ( RecordCount long ) WITH PARAMETERS( connection = "getContainer() + \".EngineFactory.EngineImpl.SnapQueryEP.CQEngine_write.ToTableStatistics\"" );
+REPLACE INTO QueryTable (ShardID, RecordCount)
+SELECT 'Shard_0' AS ShardID, RecordCount_0.RecordCount
+FROM RecordCount_0;
+
+
+CREATE STREAM out__CalculateRecordCount_1 ;
+-- WARN: CalculateRecordCount: output for on-no-match is not supported on table QueryTable.  Field ShardID is not null.
+SELECT out__Sequence_1.SecondCount, out__Sequence_1.PublisherSN, sum(QueryTable.RecordCount) AS RecordCount
+ FROM out__Sequence_1 OUTER JOIN QueryTable
+WHERE true
+INTO out__CalculateRecordCount_1;
+
+SELECT
+    out__CalculateRecordCount_1.PublisherSN,
+    ${Tablename} AS PublisherID,
+    ${Tablename} AS TableName,
+    int(null) AS InboundTuplesPerSec,
+    int(null) AS TotalQueuedTuples,
+    int(null) AS MBMemoryUsed,
+    long(null) AS TotalTuplesPublished,
+
+    if(notnull(RecordCount)) then RecordCount else long(0)AS RecordCount
+FROM   out__CalculateRecordCount_1
+INTO TableStatistics;  
+
+UPDATE sequenceid FROM (SELECT * FROM gen__seqIdSetter);

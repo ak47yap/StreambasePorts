@@ -1,0 +1,41 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+GlobalProcessorName: QCSim
+Configuration: !java.util.LinkedHashMap
+  ModuleName: QCSim.sbapp
+  ModuleFolder: "C:/workspace/PSA_7.7/PSA"
+  Builder: com.streambase.liveview.engine.ModuleGroup.ModuleGroupBuilder
+  Template: ModuleGroup.template
+  PublicStreams: 
+    - !java.util.LinkedHashMap
+      Stream: OutputStream
+      Type: output
+      Schema: !java.util.LinkedHashMap
+        Name: ~
+        Fields: 
+          - !java.util.LinkedHashMap
+            field: QC_ID string
+          - !java.util.LinkedHashMap
+            field: Container_Number string
+          - !java.util.LinkedHashMap
+            field: Discharge_Count int
+          - !java.util.LinkedHashMap
+            field: AGV_ID string
+    - !java.util.LinkedHashMap
+      Stream: LDM_QC
+      Type: output
+      Schema: !java.util.LinkedHashMap
+        Name: ~
+        Fields: 
+          - !java.util.LinkedHashMap
+            field: QC_ID string
+          - !java.util.LinkedHashMap
+            field: Container_Number string
+          - !java.util.LinkedHashMap
+            field: Status string
+      IOMappings: 
+        - !java.util.LinkedHashMap
+          Mapping: QC.DataIn
+  BuildOnServerStart: on
+  BuildSbarOnServerStart: on
+  LoadFromSbar: on

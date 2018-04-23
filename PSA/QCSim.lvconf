@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="ASCII"?>
+<liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
+  <application filename="QCSim.sbapp" id="QCSim" sub-folder=""/>
+</liveview-configuration>

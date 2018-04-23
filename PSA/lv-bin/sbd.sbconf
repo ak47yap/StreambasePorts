@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><streambase-configuration>
+  <!-- 
+      GENERATED FILE - DO NOT EDIT
+  --> 
+  <global>
+  <module-search directory="C:/workspace/PSA_7.7/PSA"/>
+        <module-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine"/>
+        <module-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine/TableCommonModules"/>
+        <module-search directory="C:/workspace/PSA_7.7/PSA/lv-interfaces"/>
+        <operator-resource-search directory="C:/workspace/PSA_7.7/PSA"/>
+        <operator-resource-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine"/>
+        <operator-resource-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine/TableTemplates"/>
+        <operator-resource-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine/TableCommonModules"/>
+        <operator-resource-search directory="C:/tibco/003/sb-cep/7.6/liveview/server/engine/TableCommonModules/adapters"/>
+    <module-search directory="C:/workspace/PSA_7.7/PSA"/>
+        <module-search directory="C:/workspace/PSA_7.7/PSA/lv-interfaces"/>
+        <operator-resource-search directory="C:/workspace/PSA_7.7/PSA"/>
+        <module-search directory="C:/workspace/PSA_7.7/PSA/lv-bin"/>
+        <operator-resource-search directory="C:/workspace/PSA_7.7/PSA/lv-bin"/>
+    </global>
+  <server>
+  	<!-- param name="datadir" value="${QS_PATH}/data/" / -->
+  </server>
+  <page-pool>
+    <!-- max-client-pages increased as sbprofile is slow to startup and will disconnect if not increased -->
+    <!-- param name="max-client-pages" value="4096" -->
+    <param name="max-client-pages" value="80000"/>  
+  </page-pool>
+  <custom-functions>
+    <custom-function alias="opCompare" args="auto" class="com.streambase.liveview.engine.function.BoolOps" language="java" name="opCompare" type="simple"/>
+    <custom-function alias="build_predicate" args="auto" class="com.streambase.liveview.engine.function.BuildQueryPredicate" language="java" name="buildPredicate" type="simple"/>
+    <custom-function alias="agg" args="auto" class="com.streambase.liveview.engine.aggregate.AggregateFunctionCaller" language="java" name="aggregate" type="simple"/>
+    <custom-function alias="msecsToSbTimeInterval" args="auto" class="com.streambase.liveview.engine.aggregate.AggregateFunctionCaller" language="java" name="msecsToSbTimeInterval" type="simple"/>
+    <custom-function alias="jsonExtractString" args="auto" class="com.streambase.liveview.engine.function.JsonOps" language="java" name="jsonExtractString" type="simple"/>
+    <custom-function alias="jsonExtractInt" args="auto" class="com.streambase.liveview.engine.function.JsonOps" language="java" name="jsonExtractInt" type="simple"/>
+    <custom-function alias="getTotalMemoryMB" args="auto" class="com.streambase.liveview.engine.function.OSBeans" language="java" name="getTotalMemoryMB" type="simple"/>
+    <custom-function alias="getJVMVendor" args="auto" class="com.streambase.liveview.engine.function.OSBeans" language="java" name="getJVMVendor" type="simple"/>
+    <custom-function alias="getLoadParallelism" args="auto" class="com.streambase.liveview.engine.function.OSBeans" language="java" name="getLoadParallelism" type="simple"/>
+    <custom-function alias="getCompileParallelism" args="auto" class="com.streambase.liveview.engine.function.OSBeans" language="java" name="getCompileParallelism" type="simple"/>
+  </custom-functions>
+  <!-- -Dstreambase.appgen.no-row-modify-count=true               = disables an unused index
+       -Dstreambase.runtime.stream-queue-max-batch=512            = reduces the max batch size to improve inter-stream latency
+       -Dstreambase.runtime.syncthread-module-lock-per-task=true  = reduces inter-strema latency
+       -Dstreambase.runtime.send-zero-stats=false                 = reduces the # of stat tuples sent out       
+       -XX:+CMSPermGenSweepingEnabled
+    -->
+  <java-vm>
+    
+    <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/engine/lib/qs.jar"/>
+    <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/engine/lib/jyaml-1.3.jar"/>
+    <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/engine/lib/sb_ipmulticast.jar"/>
+
+     
+
+     
+     
+      
+    
+    
+
+    
+    
+    
+
+    <!-- This system properity configures the StreamBaseMonitor API to only send tuples of current interest to the LiveViewStatistics preprocessor. If all monitor data is wanted, remove this properity --> 
+    
+
+  
+        
+        
+        
+    <sysproperty name="streambase.codegen.allow-container-wide-eval-cache" value="true"/>
+        <sysproperty name="streambase.appgen.no-row-modify-count" value="true"/>
+        <sysproperty name="streambase.runtime.syncthread-module-lock-per-task" value="true"/>
+        <sysproperty name="streambase.runtime.send-zero-stats" value="false"/>
+        <sysproperty name="streambase.tcp-nodelay" value="true"/>
+        <sysproperty name="streambase.queue-flush-interval" value="5"/>
+        <sysproperty name="streambase.runtime.parallel-container-startup" value="true"/>
+        <sysproperty name="streambase.query.max.plans" value="500"/>
+        <sysproperty name="streambase.check-app-environment-variables-changed" value="false"/>
+        <sysproperty name="streambase.monitor.predicate" value="(what!='bsta' &amp;&amp; what!='ienq' &amp;&amp; what!='oenq' &amp;&amp; what!='size' &amp;&amp; what!='bprh' &amp;&amp; what!='btph') || isnull(what)"/>
+        <sysproperty name="liveview.sb.compiled.version" value="7.6.6"/>
+        <sysproperty name="liveview.lv.compiled.version" value="2.1.6.3072"/>
+        <sysproperty name="liveview.queryserver.home" value="C:/tibco/003/sb-cep/7.6/liveview/server"/>
+        <sysproperty name="liveview.project.home" value="C:/workspace/PSA_7.7/PSA"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/lib/junit.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/lib/sbtest-unit.jar"/>
+        <dir path="C:/workspace/PSA_7.7/PSA/java-bin"/>
+        <jar file="C:/tibco/001/ems/8.3/lib/jms-2.0.jar"/>
+        <jar file="C:/tibco/001/ems/8.3/lib/tibjms.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/lib/sol-jms-10.3.0.jar"/>
+        <param name="jvm-args" value="-XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:ConcGCThreads=1 -Xms512m                                    -Xmx3g                                   -XX:+UseCompressedOops"/>
+        <sysproperty name="logback.configurationFile" value="C:\tibco\003\sb-cep\7.6\liveview/server/engine/conf/${STREAMBASE_LIVEVIEW_LOG:=LVlogback.xml}"/>
+        <sysproperty name="liveview.project.out" value="C:/workspace/PSA_7.7/PSA"/>
+        <sysproperty name="streambase.codegen.cachedir" value="C:/workspace/PSA_7.7/PSA/lv-bin/code-cache"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-apache-client-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-client-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-core-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-json-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-server-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-servlet-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jersey-spring-1.18.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/lv-server-rest.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jetty-all-9.2.8.v20150217.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jettison-1.3.5.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/asm-3.3.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-aop-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-aspects-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-beans-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-context-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-context-support-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-core-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-expression-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-instrument-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-jdbc-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-jms-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-messaging-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-orm-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-oxm-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-tx-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-web-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-webmvc-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-webmvc-portlet-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/spring-websocket-4.0.5.RELEASE.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/shiro-aspectj-1.2.3.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/shiro-core-1.2.3.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/shiro-spring-1.2.3.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/shiro-web-1.2.3.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jcl-over-slf4j-1.7.7.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jul-to-slf4j-1.7.7.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/h2-1.3.166.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/antlr-3.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/atmosphere-annotations-2.4.1.4.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/atmosphere-jersey-2.4.1.4.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/atmosphere-runtime-2.4.1.4.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/commons-codec-1.6.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/commons-httpclient-3.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/commons-logging-1.1.3.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jackson-core-asl-1.9.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jackson-jaxrs-1.9.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jackson-mapper-asl-1.9.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/jackson-xc-1.9.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/javax.mail.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/javax.servlet-api-3.1.0.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/log4j-1.2.17.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/quartz-2.2.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/quartz-jobs-2.2.2.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/slf4j-api-1.6.1.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/server/lib/wasync-2.1.2-all.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/lib/lv-client.jar"/>
+        <jar file="C:/tibco/003/sb-cep/7.6/liveview/lib/lv-compiler.jar"/>
+        <dir path="C:/workspace/PSA_7.7/PSA/java-bin"/>
+        <sysproperty name="liveview.streambase.connection.pool.port" value="10003"/>
+    </java-vm>
+  <operator-parameters>
+    <operator-parameter name="PeerHost" value="localhost"/>
+    <operator-parameter name="PeerPort" value="10000"/>
+    <operator-parameter name="GroupIP" value="230.0.0.1"/>
+    <operator-parameter name="GroupPort" value="4446"/>
+  <operator-parameter name="LV_HOME" value="C:/tibco/003/sb-cep/7.6/liveview/server/engine"/>
+    <operator-parameter name="LV_PROJECT_HOME" value="C:/workspace/PSA_7.7/PSA/lv-bin"/>
+    </operator-parameters>
+    
+<adapter-configurations>
+        <adapter-configuration name="jms">
+            <sb-jms-adapter-config adapter-class="com.streambase.sb.adapter.jms2.JMSConsumer">
+  <jms-servers>
+    <jms-server connection-factory-name="ConnectionFactory" name="Server" provider-context-factory="com.tibco.tibjms.naming.TibjmsInitialContextFactory" provider-name="TIBCO EMS" provider-url="tibjmsnaming://localhost:7222" server-reconnect-interval="30" username="admin">
+      <destinations>
+        <destination acknowledge-mode="CLIENT_ACKNOWLEDGE" is-topic="false" name="SEND_SB7" priority="4"/>
+        <destination name="ContainerID" priority="4"/>
+        <destination name="ASSIGN_TO_Q" priority="4" subscriber-name=""/>
+        <destination name="ASSIGN_TO_AGV" priority="4"/>
+        <destination name="ASSIGN_TO_QUAY" priority="4"/>
+        <destination is-topic="false" name="AGVUpdateToECS" priority="4"/>
+        <destination is-topic="false" name="NewAGVPath" priority="4"/>
+        <destination is-topic="false" message-to-tuple-converter="com.streambase.sb.adapter.jms2.converters.DefaultFromJMSSimpleMessageConverter" name="Reset" priority="4"/>
+        <destination is-topic="false" name="QC_Discharge" priority="4"/>
+        <destination is-topic="false" name="QC_Discharge_Completed" priority="4"/>
+      </destinations>
+    </jms-server>
+    <jms-server connection-factory-name="ConnectionFactory" jndi-security-credentials="wHpKWTK9sPjgjKwJhbYGwCltJtnGKF2wiOCrjRog7+5px7jnL/FabWi4dPtcIk55wMwdnPiY82bVF/fH2AproA==" jndi-security-principal="default" name="Server_Solace" password="wHpKWTK9sPjgjKwJhbYGwCltJtnGKF2wiOCrjRog7+5px7jnL/FabWi4dPtcIk55wMwdnPiY82bVF/fH2AproA==" provider-context-factory="com.solacesystems.jndi.SolJNDIInitialContextFactory" provider-name="Solace" provider-url="smf://sgdemo1.solace.com:55555" server-reconnect-interval="30" username="default">
+      <jndi-extra-properties>
+        <extra-property name="Solace_JMS_VPN" value="PSAPOCcore"/>
+      </jndi-extra-properties>
+      <destinations>
+        <destination acknowledge-mode="CLIENT_ACKNOWLEDGE" is-topic="false" name="SEND_SB7" priority="4"/>
+        <destination name="ContainerID" priority="4"/>
+        <destination name="ASSIGN_TO_Q" priority="4" subscriber-name=""/>
+        <destination name="ASSIGN_TO_AGV" priority="4"/>
+        <destination name="ASSIGN_TO_QUAY" priority="4"/>
+      </destinations>
+    </jms-server>
+  </jms-servers>
+</sb-jms-adapter-config>
+        </adapter-configuration>
+    </adapter-configurations>
+</streambase-configuration>

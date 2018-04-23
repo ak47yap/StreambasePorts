@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="QC">
+        <param name="gui:x" value="-336"/>
+        <param name="gui:y" value="-55"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="DeleteRecord">
+        <param name="gui:x" value="89"/>
+        <param name="gui:y" value="217"/>
+    </component>
+    <component name="Filter">
+        <param name="gui:x" value="-203"/>
+        <param name="gui:y" value="36"/>
+    </component>
+    <component name="InsertRecord">
+        <param name="gui:x" value="-326"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="Metronome">
+        <param name="gui:x" value="-475"/>
+        <param name="gui:y" value="35"/>
+    </component>
+    <component name="QCDischargeIn">
+        <param name="gui:x" value="-470"/>
+        <param name="gui:y" value="-174"/>
+    </component>
+    <component name="Query">
+        <param name="gui:x" value="-330"/>
+        <param name="gui:y" value="36"/>
+    </component>
+    <component name="Send2ECSCopy">
+        <param name="gui:x" value="89"/>
+        <param name="gui:y" value="113"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="123"/>
+    </component>
+    <component name="UpdateCount">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="-9"/>
+    </component>
+    <component name="LDM_QC">
+        <param name="gui:x" value="81"/>
+        <param name="gui:y" value="-9"/>
+    </component>
+</application-layout>

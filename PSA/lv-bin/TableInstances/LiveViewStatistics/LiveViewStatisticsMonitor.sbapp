@@ -1,0 +1,1159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="7.6.1andew_229487">
+    <add>
+        <gui.metadata>
+            <property name="app-version" value="LV2.0"/>
+        </gui.metadata>
+        <import from="QueryServerCommonSchema.sbapp"/>
+        <named-schemas>
+            <schema name="PrivateQuerySchema">
+                <field name="CQSQueryID" type="string"/>
+                <field name="CQSConnectionID" type="string"/>
+                <field name="_Command" type="int"/>
+                <field name="_MaxRecordsLimit" type="int"/>
+                <field name="_PredicateExpr" type="string"/>
+                <field name="_DelayedMilliSeconds" type="long"/>
+                <field name="_AggExpr" type="string"/>
+                <field name="_GroupBy" type="string"/>
+            </schema>
+        </named-schemas>
+        <constant expr="1" name="MSDividsor"/>
+        <parameter-definitions>
+            <parameter default="2" name="GapThreshold"/>
+            <parameter default="int(systemproperty('liveview.lvmonitor.operator.cpu.ms', &quot;500&quot; ))" name="OperatorCPUThresholdMS"/>
+            <parameter default="int(systemproperty('liveview.lvmonitor.thread.cpu.ms', &quot;900&quot; ))" name="ThreadCPUThresholdMS"/>
+            <parameter default="int(systemproperty('liveview.lvmonitor.heap.percent', &quot;80&quot; ))" name="PercentUsedHeapThreshold"/>
+            <parameter default="int(systemproperty('liveview.lvmonitor.queue.size', &quot;100000&quot; ))" name="QueueSizeThreshold"/>
+            <parameter default="1" name="MSDividsor"/>
+            <parameter default="long(systemproperty('liveview.lvmonitor.min.heapmb', &quot;4000&quot; ))  * (1024*1024)" name="MinimumHeapSize"/>
+            <parameter default="long(systemproperty('liveview.lvmonitor.min.physical.headroommb', &quot;4096&quot; ))" name="MinimumPhysicalHeadroomMB"/>
+            <parameter default="long(systemproperty('liveview.lvmonitor.physical.unused.percent', &quot;10&quot; ))" name="PercentOfUnusedPhysicalMemory"/>
+            <parameter default="int (systemproperty(&quot;liveview.monitor.cycles.between.table.polls&quot;, &quot;600&quot;))" name="NumCyclesBetweenTablePolls"/>
+            <parameter default="int(systemproperty('liveview.lvmonitor.poll.size', &quot;100&quot; ))" name="NumRowsToPollForSize"/>
+            <parameter default="bool(systemproperty('liveview.lvmonitor.enable.os.cmd', &quot;false&quot; ))" name="ENABLE_MONITOR_OS_COMMAND"/>
+            <parameter default="systemproperty('liveview.lvmonitor.os.cmd', 'vmstat,-nw,10' )" name="MONITOR_OS_COMMAND"/>
+            <parameter default="(1024*1024)" name="ONE_MEGABYTE"/>
+        </parameter-definitions>
+        <dynamic-variables>
+            <dynamic-variable initial-expression="false" name="MyIsAzul" setter-expression="IsAzul" setter-stream="IsAzulOut"/>
+            <dynamic-variable initial-expression="false" name="MyIsReady" setter-expression="IsReady" setter-stream="LVHeartBeat"/>
+            <dynamic-variable initial-expression="int(1)" name="WarningCount" setter-expression="WarningCount-1" setter-stream="DisableWarnings"/>
+        </dynamic-variables>
+        <data name="QueueTable" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="Table" type="string"/>
+                    <field name="Size" type="int"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="Table"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="StatsTable" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="TableName" type="string"/>
+                    <field name="TPS" type="long"/>
+                    <field name="TotalTuples" type="long"/>
+                    <field name="QueueBackup" type="int"/>
+                    <field name="AveRowSize" type="int"/>
+                    <field name="LastReportedRow" type="long"/>
+                    <field name="RowCount" type="long"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="TableName"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="TableTable" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="Name" type="string"/>
+                    <field name="TPS" type="long"/>
+                    <field name="TotalTuples" type="long"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="Name"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="TrackCycle" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="index" type="int"/>
+                    <field name="time" type="timestamp"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="index"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <data name="WatchTimeTable" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="index" type="int"/>
+                    <field name="time" type="timestamp"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="index"/>
+                </primary-index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="Connection" scope="public">
+            <property name="description" value="At deployment, this input stream gets connected to the system container's control stream."/>
+            <schema description="At deployment, this input stream gets connected to the system container's control stream.">
+                <field name="connectionid" type="string"/>
+                <field name="connect" type="bool"/>
+                <field name="time" type="timestamp"/>
+            </schema>
+            <param name="connection" value="'system.connections'"/>
+        </stream>
+        <stream name="DataIn" schema="LiveViewStatisticsDataSchema"/>
+        <stream name="LVHeartBeat">
+            <schema>
+                <field name="time" type="timestamp"/>
+                <field name="IsReady" type="bool"/>
+            </schema>
+            <param name="connection" value="&quot;default.HeartBeat&quot;"/>
+        </stream>
+        <stream name="out:LogConnections_1">
+            <schema>
+                <field name="connectionid" type="string"/>
+                <field name="connect" type="bool"/>
+                <field name="time" type="timestamp"/>
+                <field name="ClientIP" type="string"/>
+            </schema>
+        </stream>
+        <stream name="QueryIn" schema="PrivateQuerySchema"/>
+        <stream name="TableCommandOut" schema="TableCommandOutSchema">
+            <param name="connection" value="&quot;default.TableCommandOut&quot;"/>
+        </stream>
+        <box name="MonitorAdapter" type="inputadapter">
+            <output port="1" stream="out:MonitorAdapter_1"/>
+            <output port="2" stream="out:MonitorAdapter_2"/>
+            <output port="3" stream="out:MonitorAdapter_3"/>
+            <output port="4" stream="out:MonitorAdapter_4"/>
+            <output port="5" stream="out:MonitorAdapter_5"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.sbmonitor.SBMonitorAdapter"/>
+            <param name="EnableModule" value="true"/>
+            <param name="EnableOperator" value="false"/>
+            <param name="EnableStream" value="true"/>
+            <param name="EnableSystem" value="true"/>
+            <param name="EnableThread" value="true"/>
+            <param name="ReconnectInterval" value="2"/>
+            <param name="RemoteConnect" value="false"/>
+            <param name="URI" value="sb://localhost:10000"/>
+        </box>
+        <box name="OnceCMD" type="inputadapter">
+            <output port="1" stream="out:OnceCMD_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
+            <param name="OutputField" value="time"/>
+        </box>
+        <box name="AddClientIP02" type="map">
+            <input port="1" stream="Connection"/>
+            <output port="1" stream="out:AddClientIP02_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="ClientIP">getClientIP(connectionid)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="AddDynVar" type="map">
+            <input port="1" stream="out:MonitorAdapter_5"/>
+            <output port="1" stream="out:AddDynVar_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="MyIsAzul">MyIsAzul</include>
+                    <include field="MyIsReady">MyIsReady</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="AdjustThread" type="map">
+            <input port="1" stream="out:MonitorAdapter_3"/>
+            <output port="1" stream="out:AdjustThread_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="Name">threadName</include>
+                    <include field="TotalCPU">userTime + systemTime</include>
+                    <include field="UserTime">userTime</include>
+                    <include field="SystemTime">systemTime</include>
+                    <include field="Time">time</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="FilterDataIn" type="filter">
+            <input port="1" stream="out:MonitorAdapter_4"/>
+            <output port="1" stream="out:FilterDataIn_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="MyIsReady &amp;&amp; regexmatch(&quot;\\w*\\.TransformedDataOut$&quot;, streamName)"/>
+        </box>
+        <box name="GetStats" type="query">
+            <input port="1" stream="DataIn"/>
+            <output port="1" stream="out:GetStats_1"/>
+            <dataref id="querytable" name="StatsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="TableName"/>
+            <param name="key-value.0" value="input.TableName"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="InboundTuplesPerSec"/>
+                    <remove field="TotalQueuedTuples"/>
+                    <remove field="MBMemoryUsed"/>
+                    <remove field="TotalTuplesPublished"/>
+                </item>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="InboundTuplesPerSec">int(old.TPS)</include>
+                    <include field="TotalQueuedTuples">old.QueueBackup</include>
+                    <include field="MBMemoryUsed">if (isnull(new.AveRowSize)) then 0 else int((old.AveRowSize*RecordCount)/1000000)</include>
+                    <include field="TotalTuplesPublished">old.TotalTuples</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="RowCount">input.RecordCount</set>
+                    <set field="AveRowSize">old.AveRowSize</set>
+                    <set field="LastReportedRow">old.LastReportedRow</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="GetVendor" type="map">
+            <input port="1" stream="out:MonitorAdapter_1"/>
+            <output port="1" stream="out:GetVendor_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="Vendor">getJVMVendor()</include>
+                    <include field="IsAzul">true</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="IsCmdEnabled" type="filter">
+            <input port="1" stream="out:OnceCMD_1"/>
+            <output port="1" stream="out:IsCmdEnabled_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="${ENABLE_MONITOR_OS_COMMAND}"/>
+        </box>
+        <box name="IsDrop" type="filter">
+            <input port="1" stream="TableCommandOut"/>
+            <output port="1" stream="out:IsDrop_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!IsAdding &amp;&amp; notnull(Tablename)"/>
+        </box>
+        <box name="IsReady1" type="filter">
+            <input port="1" stream="out:MonitorAdapter_2"/>
+            <output port="1" stream="out:IsReady1_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="MyIsReady"/>
+        </box>
+        <box name="IsReady2" type="filter">
+            <input port="1" stream="out:MonitorAdapter_5"/>
+            <output port="1" stream="out:IsReady2_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="MyIsReady"/>
+        </box>
+        <module-reference name="LVMonitorProfileRef1">
+            <input name="LVHeartBeat" port="1" stream="LVHeartBeat"/>
+            <output name="UpdateStart" port="1" stream="out:LVMonitorProfileRef1_1"/>
+            <param name="file" value="LVMonitorProfile.sbapp"/>
+        </module-reference>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:MonitorAdapter_5"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <output port="3" stream="out:Split2_3"/>
+            <param name="output-count" value="3"/>
+        </box>
+        <box name="WriteTimeQuery" type="query">
+            <input port="1" stream="out:MonitorAdapter_5"/>
+            <output port="1" stream="out:WriteTimeQuery_1"/>
+            <dataref id="querytable" name="WatchTimeTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="index"/>
+            <param name="key-value.0" value="0"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" prefix="old_" selection="none">
+                    <include field="time"/>
+                </item>
+                <item name="new" prefix="new_" selection="none">
+                    <include field="time"/>
+                </item>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:WatchTimeTable_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="time">input1.time</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="none"/>
+            </target-list>
+        </box>
+        <box name="CalcGap" type="map">
+            <input port="1" stream="out:WriteTimeQuery_1"/>
+            <output port="1" stream="out:CalcGap_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="GapSecs">round(to_seconds(new_time) - to_seconds(old_time), 1)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetCount" type="map">
+            <input port="1" stream="out:Split2_3"/>
+            <output port="1" stream="DisableWarnings"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="WarmingCount">WarningCount</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetCycleTimes" type="query">
+            <input port="1" stream="out:IsReady2_1"/>
+            <output port="1" stream="out:GetCycleTimes_1"/>
+            <dataref id="querytable" name="TrackCycle"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="index"/>
+            <param name="key-value.0" value="1"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" prefix="old_" selection="all"/>
+                <item name="new" selection="all"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="time">Time</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="time">input.time</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="IsAzul" type="filter">
+            <input port="1" stream="out:GetVendor_1"/>
+            <output port="1" stream="IsAzulOut"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="Action==&quot;INITIALIZING&quot; &amp;&amp; indexof(Vendor, &quot;Azul&quot;)  != -1 -- dont send tuples to the dynamic variable when the jvm is shutting down to avoid STOPPED queue warnings."/>
+        </box>
+        <box name="IsMemoryConfigLow" type="filter">
+            <input port="1" stream="out:Split2_2"/>
+            <output port="1" stream="out:IsMemoryConfigLow_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="(WarningCount &gt; 0) &amp;&amp; (maxMemory &lt; ${MinimumHeapSize})"/>
+        </box>
+        <box name="IsPhysicalMemTooLow" type="filter">
+            <input port="1" stream="out:Split2_1"/>
+            <output port="1" stream="out:IsPhysicalMemTooLow_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="(WarningCount &gt; 0) &amp;&amp; &#13;&#10;(getTotalMemoryMB() != 0) &amp;&amp; (&#13;&#10;((getTotalMemoryMB() - round(maxMemory/${ONE_MEGABYTE}) &lt; ${MinimumPhysicalHeadroomMB}) ||&#13;&#10;((getTotalMemoryMB() &gt; (32*1024)) &amp;&amp; ( (getTotalMemoryMB() - round(maxMemory/${ONE_MEGABYTE}))) &lt; (getTotalMemoryMB() * (${PercentOfUnusedPhysicalMemory}/100) ) ) )&#13;&#10;)&#13;&#10;-- No less then MinimumPhysicalHeadroomMB available (4 GB min by default)&#13;&#10;-- If more then 32 G of main memory, no less then PercentOfUnusedMemory free for other uses (10% by default)"/>
+        </box>
+        <box name="IsThreadBusy" type="filter">
+            <input port="1" stream="out:AdjustThread_1"/>
+            <output port="1" stream="out:IsThreadBusy_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="MyIsReady &amp;&amp; ((UserTime + SystemTime)/${MSDividsor} &gt; ${ThreadCPUThresholdMS} )-- A thread is using more then threshold for every 1 sec. This assumes default monitor settings."/>
+        </box>
+        <box name="IterateOverQueues" type="iterate">
+            <input port="1" stream="out:IsReady1_1"/>
+            <output port="1" stream="out:IterateOverQueues_1"/>
+            <param name="iterate-expr" value="queues"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="queue">each.element</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="LogConnections" type="outputadapter">
+            <input port="1" stream="out:AddClientIP02_1"/>
+            <output port="1" stream="out:LogConnections_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value=""/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Info"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="LVInfoClient"/>
+            <param name="messagePrefix" value="{ Server::Connection }"/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="true"/>
+        </box>
+        <module-reference name="LVHeapMonitorRef1">
+            <input name="MonitorIn" port="1" stream="out:AddDynVar_1"/>
+            <param name="file" value="LVHeapMonitor.sbapp"/>
+            <parameter-bindings>
+                <binding name="PercentUsedHeapThreshold" value="${PercentUsedHeapThreshold}"/>
+            </parameter-bindings>
+        </module-reference>
+        <box name="MakeCmd" type="map">
+            <input port="1" stream="out:IsCmdEnabled_1"/>
+            <output port="1" stream="out:MakeCmd_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">split(${MONITOR_OS_COMMAND}, ",")</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Split3" type="split">
+            <input port="1" stream="out:IsDrop_1"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="out:Split3_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="WriteTPS" type="query">
+            <input port="1" stream="out:FilterDataIn_1"/>
+            <dataref id="querytable" name="TableTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="Name"/>
+            <param name="key-value.0" value="substr(streamName, 0, indexof(streamName, &quot;.&quot;))"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">input.deltaTuples</set>
+                    <set field="TotalTuples">input.deltaTuples</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">deltaTuples</set>
+                    <set field="TotalTuples">if (input.deltaTuples &gt;= 0) then old.TotalTuples + input.deltaTuples else 0</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">input.deltaTuples</set>
+                    <set field="TotalTuples">input.deltaTuples</set>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="DisableWarnings"/>
+        <output-stream name="IsAzulOut"/>
+        <box name="AdjustQueue" type="map">
+            <input port="1" stream="out:IterateOverQueues_1"/>
+            <output port="1" stream="out:AdjustQueue_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="Time">time</include>
+                    <include field="Name">queue.queueName</include>
+                    <include field="BatchLatency">queue.batchLatency</include>
+                    <include field="BatchProcessingTime">queue.batchProcessingTime</include>
+                    <include field="CurrentQueueLength">queue.currentQueueLength</include>
+                    <include field="MaxQueueLength">queue.maxQueueLength</include>
+                    <include field="Type">"Q"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="DropTable" type="query">
+            <input port="1" stream="out:Split3_1"/>
+            <output port="1" stream="out:DropTable_1"/>
+            <dataref id="querytable" name="StatsTable"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="TableName"/>
+            <param name="key-lowerbound-value.0" value="input.Tablename"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" prefix="_old" selection="all"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="GetMemParams" type="map">
+            <input port="1" stream="out:IsPhysicalMemTooLow_1"/>
+            <output port="1" stream="out:GetMemParams_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="heapSizeMB">round(maxMemory/${ONE_MEGABYTE})</include>
+                    <include field="PhysicalMemoryMB">getTotalMemoryMB()</include>
+                    <include field="SpareMemoryMB">getTotalMemoryMB() - round(maxMemory/${ONE_MEGABYTE})</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="isCycled" type="filter">
+            <input port="1" stream="out:GetCycleTimes_1"/>
+            <output port="1" stream="out:isCycled_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="if (notnull(time) &amp;&amp; notnull(old_time)) then (time &gt; old_time) else false"/>
+        </box>
+        <box name="IsGap" type="filter">
+            <input port="1" stream="out:CalcGap_1"/>
+            <output port="1" stream="out:IsGap_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="MyIsReady &amp;&amp; (notnull(old_time) &amp;&amp; GapSecs &gt; ${GapThreshold})"/>
+        </box>
+        <box name="LogCMD" type="outputadapter">
+            <input port="1" stream="out:MakeCmd_1"/>
+            <output port="1" stream="out:LogCMD_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value=""/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Info"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="LVMonitor"/>
+            <param name="messagePrefix" value="{ OS CMD }"/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="true"/>
+        </box>
+        <box name="MakeDelete" type="map">
+            <input port="1" stream="out:Split3_2"/>
+            <output port="1" stream="out:MakeDelete_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="TableName">Tablename</include>
+                    <include field="CQSDelete">true</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ScaleMem" type="map">
+            <input port="1" stream="out:IsMemoryConfigLow_1"/>
+            <output port="1" stream="out:ScaleMem_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="heapSizeMB">round(maxMemory/${ONE_MEGABYTE})</include>
+                    <include field="WarningCount">WarningCount</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ThreadBusyLog" type="outputadapter">
+            <input port="1" stream="out:IsThreadBusy_1"/>
+            <output port="1" stream="ThreadBusy"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value="Thread Busy: Name &quot;{0}&quot;, total CPU {1} mS, user {2} mS, system {3} mS"/>
+            <param name="logLevel" value="Info"/>
+            <param name="messageIdentifier" value="LVMonitor"/>
+            <param name="messagePrefix" value=""/>
+            <param name="verbose" value="false"/>
+        </box>
+        <output-stream name="ThreadBusy" scope="public"/>
+        <box name="DropTable2" type="query">
+            <input port="1" stream="out:DropTable_1"/>
+            <dataref id="querytable" name="TableTable"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="Name"/>
+            <param name="key-lowerbound-value.0" value="input.Tablename"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">input.deltaTuples</set>
+                    <set field="TotalTuples">input.deltaTuples</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">deltaTuples</set>
+                    <set field="TotalTuples">old.TotalTuples + input.deltaTuples</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">input.deltaTuples</set>
+                    <set field="TotalTuples">input.deltaTuples</set>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GapDetectLog" type="outputadapter">
+            <input port="1" stream="out:IsGap_1"/>
+            <output port="1" stream="GapDetect"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value="Prolonged JVM stutter: Total time {2} seconds"/>
+            <param name="logLevel" value="Warn"/>
+            <param name="messageIdentifier" value="LVMonitor"/>
+            <param name="messagePrefix" value=""/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="IsQueueBusy" type="filter">
+            <input port="1" stream="out:AdjustQueue_1"/>
+            <output port="1" stream="out:IsQueueBusy_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="CurrentQueueLength &gt; ${QueueSizeThreshold} -- arbitrary number of tuples"/>
+        </box>
+        <box name="MemoryConfigTooLow" type="outputadapter">
+            <input port="1" stream="out:ScaleMem_1"/>
+            <output port="1" stream="MemoryConfigTooLowOut"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value="Maximum heap size configured to be {0} MB, which is below recommended size for LiveView production configurations"/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Warn"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="MemoryConfigTooLow"/>
+            <param name="messagePrefix" value=""/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="NegativeMem" type="filter">
+            <input port="1" stream="out:GetMemParams_1"/>
+            <output port="1" stream="out:NegativeMem_1"/>
+            <output port="2" stream="out:NegativeMem_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="SpareMemoryMB &gt; 0"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="OSProcess" type="java">
+            <input port="1" stream="out:LogCMD_1"/>
+            <output port="1" stream="out:OSProcess_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.liveview.engine.operator.OSProcess"/>
+        </box>
+        <box name="Sequence" type="seqnum">
+            <input port="1" stream="out:isCycled_1"/>
+            <output port="1" stream="out:Sequence_1"/>
+            <param name="output-field" value="Count"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:GetStats_1"/>
+            <input port="2" stream="out:MakeDelete_1"/>
+            <output port="1" stream="DataOut"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="UpdateQueue" type="query">
+            <input port="1" stream="out:AdjustQueue_1"/>
+            <dataref id="querytable" name="QueueTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="Table"/>
+            <param name="key-value.0" value="if ( indexof(Name, &quot;.&quot;) &gt; 0 ) then substr(Name, 0, indexof(Name, &quot;.&quot;)) else substr(Name, 0, indexof(Name, &quot;:&quot;))"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="insert"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable_logical_value" name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="Size">CurrentQueueLength</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable_logical_value" name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="Size">Size + CurrentQueueLength</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="no-match">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="Size">CurrentQueueLength</set>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="DataOut" schema="LiveViewStatisticsDataSchema"/>
+        <output-stream name="GapDetect" scope="public"/>
+        <output-stream name="MemoryConfigTooLowOut"/>
+        <box name="FormatOut" type="map">
+            <input port="1" stream="out:OSProcess_1"/>
+            <output port="1" stream="out:FormatOut_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="Out">if (notnull(StdOut)) then "StdOut: " + StdOut else if (notnull(ErrOut)) then "ErrOut: " +  ErrOut else "ExitCode: " + ExitCode</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="NegMemoryLog" type="outputadapter">
+            <input port="1" stream="out:NegativeMem_2"/>
+            <output port="1" stream="out:NegMemoryLog_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="compressFrequentMessages" value="false"/>
+            <param name="compressIgnoreTimestampFields" value="true"/>
+            <param name="compressMaxWindowSize" value="5.0"/>
+            <param name="customFormat" value="Maximum heap size configured to be {0} MB of available physical memory ({1} MB). Configuring heap sizes greater than available physical memory can cause detrimental OS swapping."/>
+            <param name="customFormatExpression" value=""/>
+            <param name="customFormatType" value="Basic"/>
+            <param name="emitLoggedTuples" value="true"/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Warn"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="PhysicalMemTooLow"/>
+            <param name="messageIdentifierExpression" value=""/>
+            <param name="messageIdentifierType" value="Basic"/>
+            <param name="messagePrefix" value=""/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="PhysicalMemTooLow" type="outputadapter">
+            <input port="1" stream="out:NegativeMem_1"/>
+            <output port="1" stream="out:PhysicalMemTooLow_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value="Maximum heap size configured to be {0} MB of available physical memory ({1} MB). StreamBase recommends greater than {2} MB of memory free for other uses."/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Warn"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="PhysicalMemTooLow"/>
+            <param name="messagePrefix" value=""/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="QueueBusyLog" type="outputadapter">
+            <input port="1" stream="out:IsQueueBusy_1"/>
+            <output port="1" stream="QueueBusy"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value="Large queue backup: Name &quot;{1}&quot;, current size {4}, max size {5}"/>
+            <param name="logLevel" value="Info"/>
+            <param name="messageIdentifier" value="LVMonitor"/>
+            <param name="messagePrefix" value=""/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Sequence_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="QueueBusy" scope="public"/>
+        <box name="ClearQueues" type="query">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:ClearQueues_1"/>
+            <dataref id="querytable" name="QueueTable"/>
+            <param name="operation" value="delete"/>
+            <param name="where" value="all-rows"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="LogCMDOut" type="outputadapter">
+            <input port="1" stream="out:FormatOut_1"/>
+            <output port="1" stream="out:LogCMDOut_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value=""/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Info"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="LVMonitor"/>
+            <param name="messagePrefix" value="{ OS CMD } "/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="ReadAll" type="query">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:ReadAll_1"/>
+            <dataref id="querytable" name="TableTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="all-rows"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="Count"/>
+                </item>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:PhysicalMemTooLow_1"/>
+            <input port="2" stream="out:NegMemoryLog_1"/>
+            <output port="1" stream="PhysicalMemTooLowOut"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="PhysicalMemTooLowOut"/>
+        <box name="DumpTables" type="query">
+            <input port="1" stream="out:ClearQueues_1"/>
+            <output port="1" stream="out:DumpTables_1"/>
+            <dataref id="querytable" name="TableTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="all-rows"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="GetQueueSizes" type="query">
+            <input port="1" stream="out:ReadAll_1"/>
+            <output port="1" stream="out:GetQueueSizes_1"/>
+            <dataref id="querytable" name="QueueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="Table"/>
+            <param name="key-lowerbound-value.0" value="Name"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <expressions>
+                    <include field="TotalQueuing">current.Size</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:QueueTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="IsTimeToPoll" type="filter">
+            <input port="1" stream="out:ReadAll_1"/>
+            <output port="1" stream="out:IsTimeToPoll_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="(Count%${NumCyclesBetweenTablePolls}) == 0"/>
+        </box>
+        <box name="ClearSize" type="query">
+            <input port="1" stream="out:DumpTables_1"/>
+            <dataref id="querytable" name="TableTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="Name"/>
+            <param name="key-value.0" value="Name"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="Size">0</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:TableTable_logical_value" name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="TPS">0</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:TableTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="GetRows" type="query">
+            <input port="1" stream="out:IsTimeToPoll_1"/>
+            <output port="1" stream="out:GetRows_1"/>
+            <dataref id="querytable" name="StatsTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="TableName"/>
+            <param name="key-lowerbound-value.0" value="Name"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none">
+                    <include field="LastReportedRow"/>
+                    <include field="RowCount"/>
+                </item>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:StatsTable" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="schema:StatsTable" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="WriteStats" type="query">
+            <input port="1" stream="out:GetQueueSizes_1"/>
+            <dataref id="querytable" name="StatsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="TableName"/>
+            <param name="key-value.0" value="Name"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="QueueBackup">TotalQueuing</set>
+                    <set field="AveRowSize">old.AveRowSize</set>
+                    <set field="LastReportedRow">old.LastReportedRow</set>
+                    <set field="TotalTuples">input.TotalTuples -- should never be negative, but I do see this when tables are removed/added.</set>
+                </expressions>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="IsEnough" type="filter">
+            <input port="1" stream="out:GetRows_1"/>
+            <output port="1" stream="out:IsEnough_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="isnull(LastReportedRow) || ((LastReportedRow + 100) &lt; RowCount)"/>
+        </box>
+        <box name="GetRequest" type="map">
+            <input port="1" stream="out:IsEnough_1"/>
+            <output port="1" stream="out:GetRequest_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="Name"/>
+                </item>
+                <expressions>
+                    <include field="NumRows">${NumRowsToPollForSize}</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetAveRowSize" type="java">
+            <input port="1" stream="out:GetRequest_1"/>
+            <output port="1" stream="out:GetAveRowSize_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.liveview.engine.operator.GetAveRowSize"/>
+        </box>
+        <box name="WriteMemoryUsage" type="query">
+            <input port="1" stream="out:GetAveRowSize_1"/>
+            <output port="1" stream="out:WriteMemoryUsage_1"/>
+            <dataref id="querytable" name="StatsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="TableName"/>
+            <param name="key-value.0" value="input.TableName"/>
+            <param name="write-type" value="update"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="all"/>
+                <item name="current" selection="none"/>
+            </target-list>
+            <target-list goal-schema="schema:StatsTable" name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="MBMemoryUsed">AveSize*old.RowCount</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:StatsTable_logical_value" name="update">
+                <item name="input" selection="none"/>
+                <expressions>
+                    <set field="AveRowSize">input.AveSize</set>
+                    <set field="LastReportedRow">old.RowCount</set>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="schema:StatsTable" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="IncMemLog" type="outputadapter">
+            <input port="1" stream="out:WriteMemoryUsage_1"/>
+            <output port="1" stream="out:IncMemLog_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="customFormat" value=""/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="logLevel" value="Debug"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="messageIdentifier" value="LVDebugMonitor"/>
+            <param name="messagePrefix" value=""/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="verbose" value="true"/>
+        </box>
+    </add>
+</modify>

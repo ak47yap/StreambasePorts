@@ -1,0 +1,11 @@
+IMPORT * FROM "CQInterfaces.sbint" ;
+CREATE INPUT STREAM DataIn UpdateDataPublicOut;
+CREATE INPUT STREAM ConflatedDataIn UpdateDataPublicOut;
+CREATE OUTPUT STREAM DataOut ;
+CREATE OUTPUT STREAM ConflatedDataOut;
+
+SELECT * FROM DataIn WHERE false INTO DataOut;
+SELECT * FROM ConflatedDataIn WHERE false INTO ConflatedDataOut;
+
+
+

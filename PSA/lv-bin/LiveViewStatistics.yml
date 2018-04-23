@@ -1,0 +1,41 @@
+# Created by StreamBase LiveView 2.1.6.3072
+--- 
+TableName: LiveViewStatistics
+TableType: Data
+PublishType: Realtime
+PrimaryKey: TableName
+Fields: 
+  - !java.util.LinkedHashMap
+    field: TableName string
+  - !java.util.LinkedHashMap
+    field: RecordCount long
+  - !java.util.LinkedHashMap
+    field: InboundTuplesPerSec int
+  - !java.util.LinkedHashMap
+    field: TotalQueuedTuples int
+  - !java.util.LinkedHashMap
+    field: MBMemoryUsed int
+  - !java.util.LinkedHashMap
+    field: TotalTuplesPublished long
+FieldUpdateRules: 
+  - 
+    - !java.util.LinkedHashMap
+      Test: true
+      Assignments: []
+Indices: 
+  - !java.util.LinkedHashMap
+    index: TableName
+DataTransformation: !java.util.LinkedHashMap
+  Transformers: 
+    - !java.util.LinkedHashMap
+      Transformer: LiveViewStatisticsMonitor.sbapp
+Configuration: !java.util.LinkedHashMap
+  BuildOnServerStart: off
+  BuildSbarOnServerStart: off
+  LoadOnServerStart: on
+  LoadFromSbar: on
+  NumberOfThreads: 1
+  NumberOfConcurrentSnaps: 0
+  MinCacheSizeForEval: 1000
+  MaxCacheSizeForEval: 1000
+  RestoreDataOnStart: off

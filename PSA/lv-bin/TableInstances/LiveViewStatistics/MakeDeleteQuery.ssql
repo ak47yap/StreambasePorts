@@ -1,0 +1,13 @@
+IMPORT * FROM "CQInterfaces.sbint" ;
+IMPORT * FROM "QueryServerCommonSchema.sbapp" ;
+CREATE INPUT STREAM DataInDelete EnrichedDataSchema;
+CREATE OUTPUT STREAM DeleteResults ;
+CREATE INPUT  TABLE MainTable_Placeholder 
+Orders;
+
+
+DELETE FROM MainTable_Placeholder
+USING DataInDelete
+WHERE (MainTable_Placeholder.TableName <=> DataInDelete.TableName)
+RETURNING MainTable_Placeholder.*
+INTO DeleteResults;
